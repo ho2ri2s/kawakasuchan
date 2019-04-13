@@ -1,10 +1,12 @@
 package com.kurus.kawakasuchan;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.view.DragEvent;
 import android.view.MotionEvent;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -18,11 +20,11 @@ import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
     private TextView txtDPoint, txtLevel;
-    private ImageView imgCharacter, imgDryer, imgNew;
+    private ImageView imgDryer, imgNew;
     private Button btnShopping, btnBath, btnDress;
-    private FrameLayout frameLayout;
     private ProgressBar experienceBar, statusBar;
     private SoundDetection soundDetection;
+    private SurfaceView surfaceView;
     private Handler handler = new Handler();
     private Timer timer;
     private TimerTask timerTask;
@@ -32,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private float imgCharacterX;
     private float imgCharacterY;
     private boolean onImgCharacter = false;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,14 +51,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         //UIとの関連付け
         txtDPoint = (TextView)findViewById(R.id.txtDPoint);
         txtLevel = (TextView)findViewById(R.id.txtLevel);
-        imgCharacter = (ImageView)findViewById(R.id.imgCharacter);
         imgDryer = (ImageView)findViewById(R.id.imgDryer);
         btnShopping = (Button)findViewById(R.id.btnShopping);
         btnBath = (Button)findViewById(R.id.btnBath);
         btnDress = (Button)findViewById(R.id.btnDress);
-        frameLayout = (FrameLayout)findViewById(R.id.frameLayout);
         experienceBar = (ProgressBar)findViewById(R.id.experienceBar);
         statusBar = (ProgressBar)findViewById(R.id.statusBar);
+        surfaceView = (SurfaceView)findViewById(R.id.surfaceView);
+
+        surfaceView = new MainSurfaceView(this, surfaceView);
 
         //ProgressBarの初期化
         experienceBar.setMax(100);
@@ -84,15 +88,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         });
 
         //キャラクターのイベント受信処理
-        imgCharacter.setOnDragListener(new View.OnDragListener(){
+        surfaceView.setOnDragListener(new View.OnDragListener(){
             @Override
             public boolean onDrag(View view, DragEvent event) {
                 switch (event.getAction()){
-                    case DragEvent.ACTION_DRAG_STARTED:
-                        if(imgNew != null) {
-                            imgNew.setAlpha(0.5f);
-                        }
-                        return true;
+//                    case DragEvent.ACTION_DRAG_STARTED:
+//                        if(imgNew != null) {
+//                            imgNew.setAlpha(0.5f);
+//                        }
+//                        return true;
                     case DragEvent.ACTION_DRAG_EXITED:
                         onImgCharacter = false;
                         break;
@@ -100,23 +104,30 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         onImgCharacter = true;
                         break;
                     case DragEvent.ACTION_DROP:
-                        imgCharacterX = event.getX();
-                        imgCharacterY = event.getY();
-                        if(dryerNumber != 0){
-                            ((FrameLayout)imgNew.getParent()).removeView(imgNew);
+                        if(dryerNumber == 0) {
+                            surfaceView = new MainSurfaceView(getApplicationContext(), surfaceView, event);
+                            dryerNumber++;
                         }
-                        addImage();
+//                        imgCharacterX = event.getX();
+//                        imgCharacterY = event.getY();
+//                        if(dryerNumber != 0){
+//                            ((FrameLayout)imgNew.getParent()).removeView(imgNew);
+//                        }
+//                        addImage();
                         break;
-                        case DragEvent.ACTION_DRAG_ENDED:
-                            if(imgNew != null) {
-                                imgNew.setAlpha(1.0f);
-                            }
-                            break;
+//                        case DragEvent.ACTION_DRAG_ENDED:
+//                            if(imgNew != null) {
+//                                imgNew.setAlpha(1.0f);
+//                            }
+//                            break;
 
                 }
                 return true;
             }
         });
+
+        //端末に保存されているキャラクター情報を読み込む
+        readCharacterInformationFromSharedPreferences();
     }
 
     //他のアクティビティから帰ってきたときに呼ばれる
@@ -168,6 +179,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         super.onPause();
         //録音停止
         soundDetection.stop();
+        if(timer != null){
+            timer.cancel();
+            timer = null;
+        }
+        //キャラクター情報を端末に保存する
+        saveCharacterInformationFromSharedPreferences();
+
     }
 
     //ドライヤーがタッチされた際の処理
@@ -178,25 +196,44 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     //ドライヤー画像を生成
-    public void addImage(){
-        if(onImgCharacter){
-            FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(imgDryer.getWidth(), imgDryer.getHeight());
-            imgNew = new ImageView(getApplicationContext());
-            imgNew.setImageResource(R.drawable.dryer);
-
-            frameLayout.addView(imgNew, layoutParams);
-            imgNew.setTranslationX(imgCharacterX - imgDryer.getWidth() / 2);
-            imgNew.setTranslationY(imgCharacterY - imgDryer.getHeight() / 2);
-
-            imgNew.setOnTouchListener(this);
-            dryerNumber++;
-        }
-    }
+//    public void addImage(){
+//        if(onImgCharacter){
+//            FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(imgDryer.getWidth(), imgDryer.getHeight());
+//            imgNew = new ImageView(getApplicationContext());
+//            imgNew.setImageResource(R.drawable.dryer);
+//
+//            frameLayout.addView(imgNew, layoutParams);
+//            imgNew.setTranslationX(imgCharacterX - imgDryer.getWidth() / 2);
+//            imgNew.setTranslationY(imgCharacterY - imgDryer.getHeight() / 2);
+//
+//            imgNew.setOnTouchListener(this);
+//            dryerNumber++;
+//        }
+//    }
     //初期化
     public void dryerInit(){
         dryerNumber = 0;
         ((FrameLayout)imgNew.getParent()).removeView(imgNew);
 
     }
+
+    public void readCharacterInformationFromSharedPreferences(){
+        sharedPreferences = getSharedPreferences("characterInformation", MODE_PRIVATE);
+        character.setdPoint(sharedPreferences.getInt("key_dPoint", 0));
+        character.setExperienceNow(sharedPreferences.getInt("key_experienceNow", 0));
+        character.setLevel(sharedPreferences.getInt("key_level", 1));
+        character.setWetStage(sharedPreferences.getInt("key_wetStage", 4));
+        character.setWetStatus(sharedPreferences.getInt("key_wetAStatus", 100));
+    }
+
+    public void saveCharacterInformationFromSharedPreferences(){
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt("key_dPoint", character.getdPoint());
+        editor.putInt("key_experienceNow", character.getExperienceNow());
+        editor.putInt("key_level", character.getLevel());
+        editor.putInt("key_wetStage", character.getWetStage());
+        editor.putInt("key_wetAStatus", character.getWetStatus());
+    }
+
 
 }
