@@ -1,5 +1,6 @@
 package com.kurus.kawakasuchan;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -33,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private float imgCharacterX;
     private float imgCharacterY;
     private boolean onImgCharacter = false;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,6 +125,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 return true;
             }
         });
+
+        //端末に保存されているキャラクター情報を読み込む
+        readCharacterInformationFromSharedPreferences();
     }
 
     //他のアクティビティから帰ってきたときに呼ばれる
@@ -178,6 +183,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             timer.cancel();
             timer = null;
         }
+        //キャラクター情報を端末に保存する
+        saveCharacterInformationFromSharedPreferences();
+
     }
 
     //ドライヤーがタッチされた際の処理
@@ -188,25 +196,44 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     //ドライヤー画像を生成
-    public void addImage(){
-        if(onImgCharacter){
-            FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(imgDryer.getWidth(), imgDryer.getHeight());
-            imgNew = new ImageView(getApplicationContext());
-            imgNew.setImageResource(R.drawable.dryer);
-
-            frameLayout.addView(imgNew, layoutParams);
-            imgNew.setTranslationX(imgCharacterX - imgDryer.getWidth() / 2);
-            imgNew.setTranslationY(imgCharacterY - imgDryer.getHeight() / 2);
-
-            imgNew.setOnTouchListener(this);
-            dryerNumber++;
-        }
-    }
+//    public void addImage(){
+//        if(onImgCharacter){
+//            FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(imgDryer.getWidth(), imgDryer.getHeight());
+//            imgNew = new ImageView(getApplicationContext());
+//            imgNew.setImageResource(R.drawable.dryer);
+//
+//            frameLayout.addView(imgNew, layoutParams);
+//            imgNew.setTranslationX(imgCharacterX - imgDryer.getWidth() / 2);
+//            imgNew.setTranslationY(imgCharacterY - imgDryer.getHeight() / 2);
+//
+//            imgNew.setOnTouchListener(this);
+//            dryerNumber++;
+//        }
+//    }
     //初期化
     public void dryerInit(){
         dryerNumber = 0;
         ((FrameLayout)imgNew.getParent()).removeView(imgNew);
 
     }
+
+    public void readCharacterInformationFromSharedPreferences(){
+        sharedPreferences = getSharedPreferences("characterInformation", MODE_PRIVATE);
+        character.setdPoint(sharedPreferences.getInt("key_dPoint", 0));
+        character.setExperienceNow(sharedPreferences.getInt("key_experienceNow", 0));
+        character.setLevel(sharedPreferences.getInt("key_level", 1));
+        character.setWetStage(sharedPreferences.getInt("key_wetStage", 4));
+        character.setWetStatus(sharedPreferences.getInt("key_wetAStatus", 100));
+    }
+
+    public void saveCharacterInformationFromSharedPreferences(){
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt("key_dPoint", character.getdPoint());
+        editor.putInt("key_experienceNow", character.getExperienceNow());
+        editor.putInt("key_level", character.getLevel());
+        editor.putInt("key_wetStage", character.getWetStage());
+        editor.putInt("key_wetAStatus", character.getWetStatus());
+    }
+
 
 }

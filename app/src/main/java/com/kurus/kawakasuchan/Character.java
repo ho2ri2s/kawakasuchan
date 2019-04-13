@@ -55,8 +55,30 @@ public class Character {
     public int getLevel(){
         return level;
     }
-
+    public int getWetStage(){return wetStage;}
     public int getWetStatus() {
         return wetStatus;
     }
+
+
+    public void setdPoint(int dPoint) {
+        this.dPoint = dPoint;
+    }
+
+    public void setExperienceNow(int experienceNow) {
+        this.experienceNow = experienceNow;
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
+    }
+
+    public void setWetStatus(int wetStatus) {
+        this.wetStatus = wetStatus;
+    }
+
+    public void setWetStage(int wetStage) {
+        this.wetStage = wetStage;
+    }
+
 }
