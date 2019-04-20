@@ -36,13 +36,18 @@ public class SoundDetection implements Runnable {
     }
     //スレッド開始（録音開始）
     public void run(){
+        //優先順位を設定
         Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
-        int buffersize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT);
+        //音量データのバッファサイズ（byte）
+        //デバイスの要求する最小値より大きくする必要がある
+        int buffersize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
         AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE,
-                AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, buffersize);
+                AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, buffersize);
         short[] buffer = new short[buffersize];
+        //録音開始
         audioRecord.startRecording();
         while (isRecording){
+            //音声データ読み込み
             audioRecord.read(buffer, 0, buffersize);
             short maxVolume = 0;
             for(int i = 0; i < buffersize; i++){
