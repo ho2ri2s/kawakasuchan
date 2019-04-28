@@ -11,11 +11,11 @@ public class SoundDetection implements Runnable {
     private OnReachedVolumeListener listener;
     //録音中フラグ
     private boolean isRecording = true;
-    //サンプリングレート 80.0kHz
-    private static final int SAMPLE_RATE = 8000;
+    //サンプリングレート 44.1kHz
+    private static final int SAMPLE_RATE = 44100;
     //ボーダー音量
     // TODO: 2019/04/02 ドライヤーが起動したとわかるような音量を設定 
-    private short borderVolume = 10000;
+    private short borderVolume = 6000;
 
 
     public void setBorderVolume(short borderVolume){
@@ -40,22 +40,32 @@ public class SoundDetection implements Runnable {
         Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
         //音量データのバッファサイズ（byte）
         //デバイスの要求する最小値より大きくする必要がある
-        int buffersize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
-        AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, buffersize);
+        int buffersize = AudioRecord.getMinBufferSize(
+                SAMPLE_RATE,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT);
+        //AudioRecordのインスタンス化
+        AudioRecord audioRecord = new AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                SAMPLE_RATE,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT, buffersize);
+
         short[] buffer = new short[buffersize];
         //録音開始
         audioRecord.startRecording();
         while (isRecording){
             //音声データ読み込み
             audioRecord.read(buffer, 0, buffersize);
+
             short maxVolume = 0;
             for(int i = 0; i < buffersize; i++){
                 // TODO: 2019/04/02 minVolumeを定義。ボーダーよりも小さければ読み込み終了。 
                 maxVolume = (short)Math.max(maxVolume, buffer[i]);
                 if(maxVolume > borderVolume){
-                    if(listener != null){
-                        listener.onReachedVolume(maxVolume);
+                    if(this.listener != null){
+                        this.listener.onReachedVolume(maxVolume);
+                        break;
                     }
                 }
             }
@@ -66,6 +76,10 @@ public class SoundDetection implements Runnable {
 
     public boolean getIsRecording(){
         return isRecording;
+    }
+
+    public void removeListener(){
+        this.listener = null;
     }
 
 }

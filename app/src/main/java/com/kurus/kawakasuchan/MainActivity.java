@@ -4,6 +4,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.DragEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -13,10 +14,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
-public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnDragListener {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnDragListener, View.OnClickListener {
 
     private TextView txtDPoint, txtLevel;
     private ImageView imgDryer, imgCharacter;
@@ -24,16 +22,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private ProgressBar experienceBar, statusBar;
     private SoundDetection soundDetection;
     private Handler handler = new Handler();
-    private Timer timer;
-    private TimerTask timerTask;
+    private Runnable runnable;
     private Character character;
     private FrameLayout frameLayout;
     private int experienceProgress, statusProgress;
     private int dryerWidth, dryerHeight;
-    private int dryerNumber;
     private float dryerX;
     private float dryerY;
     private boolean onImgCharacter = false;
+    private boolean isDryer;
     private SharedPreferences sharedPreferences;
 
     @Override
@@ -41,7 +38,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        dryerNumber = 0;
+        isDryer = false;
         dryerX = 0;
         dryerY = 0;
         experienceProgress = 0;
@@ -73,6 +70,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         imgDryer.setOnTouchListener(this);
         frameLayout.setOnDragListener(this);
+        btnBath.setOnClickListener(this);
 //        imgCharacter.setOnDragListener(this);
 
         //端末に保存されているキャラクター情報を読み込む
@@ -111,45 +109,50 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         return false;
     }
 
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()){
+            case R.id.btnBath:
+                character.setWetStatus(100);
+                statusProgress = character.getWetStatus();
+                statusBar.setProgress(statusProgress);
+                break;
+        }
+    }
+
     //他のアクティビティから帰ってきたときに呼ばれる
     @Override
     protected void onResume() {
         super.onResume();
-        soundDetection = new SoundDetection();
-        soundDetection.setOnReachedVolumeListener(new SoundDetection.OnReachedVolumeListener(){
-            //音を感知したら呼び出される
-            public void onReachedVolume(short volume){
-                //別スレッドからUIスレッドに処理を投げる
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        // TODO: 2019/04/01 ドライヤーやキャラクターのアニメーション実装
-                        if (timer == null){
-                            timer = new Timer();
-                            //3秒おきに乾かす処理
-                            timerTask = new TimerTask() {
-                                @Override
-                                public void run() {
-                                    handler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            character.drying();
-                                            txtDPoint.setText(String.valueOf(character.getdPoint()));
-                                            txtLevel.setText(String.valueOf(character.getLevel()));
-                                            experienceProgress = character.getExperienceNow();
-                                            experienceBar.setProgress(experienceProgress);
-                                            statusProgress = character.getWetStatus();
-                                            statusBar.setProgress(statusProgress);
-                                        }
-                                    });
-                                }
-                            };
-                            timer.schedule(timerTask, 0, 3000);
+        //ドライヤーの準備ができているときに録音処理を開始する
+        if(isDryer) {
+            soundDetection = new SoundDetection();
+            soundDetection.setOnReachedVolumeListener(new SoundDetection.OnReachedVolumeListener() {
+                //音を感知したら呼び出される
+                public void onReachedVolume(short volume) {
+                    //別スレッドからUIスレッドに処理を投げる
+                    runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.i("MYTAG", "OK");
+                            character.drying();
+
+                            //フィールドの更新
+                            experienceProgress = character.getExperienceNow();
+                            statusProgress = character.getWetStatus();
+                            //UIの更新
+                            txtDPoint.setText(String.valueOf(character.getdPoint()));
+                            txtLevel.setText(String.valueOf(character.getLevel()));
+                            experienceBar.setProgress(experienceProgress);
+                            statusBar.setProgress(statusProgress);
+                            //3秒間隔で実行
+                            handler.postDelayed(this, 3000);
                         }
-                    }
-                });
-            }
-        });
+                    };
+                    handler.post(runnable);
+                }
+            });
+        }
         //別のスレッドとして録音開始
         new Thread(soundDetection).start();
     }
@@ -160,10 +163,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         super.onPause();
         //録音停止
         soundDetection.stop();
-        if(timer != null){
-            timer.cancel();
-            timer = null;
-        }
+        //handlerとrunnableとの関係を切る
+        handler.removeCallbacks(runnable);
         //キャラクター情報を端末に保存する
         saveCharacterInformationFromSharedPreferences();
 
@@ -182,14 +183,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             imgDryer.setTranslationY(dryerY  - 100); //imgDryer.getHeight() / 2 は,ずれちゃう
 
             imgDryer.setOnTouchListener(this);
-            dryerNumber++;
+            isDryer = true;
         }
     }
 
 
     //初期化
     public void dryerInit(){
-        dryerNumber = 0;
+        isDryer = false;
         ((FrameLayout)imgDryer.getParent()).removeView(imgDryer);
 
     }
@@ -215,3 +216,4 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
 }
+
