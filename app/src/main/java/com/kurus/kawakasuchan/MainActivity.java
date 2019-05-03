@@ -4,7 +4,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.DragEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -27,11 +26,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private FrameLayout frameLayout;
     private int experienceProgress, statusProgress;
     private int dryerWidth, dryerHeight;
+    private int count;
     private float dryerX;
     private float dryerY;
-    private boolean onImgCharacter = false;
+    private boolean onImgCharacter;
     private boolean isDryer;
     private SharedPreferences sharedPreferences;
+    private long startTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +45,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         experienceProgress = 0;
         statusProgress = 0;
         character = new Character();
+        startTime = 0;
+        onImgCharacter = false;
 
         //UIとの関連付け
         txtDPoint = (TextView)findViewById(R.id.txtDPoint);
@@ -114,6 +117,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         switch (view.getId()){
             case R.id.btnBath:
                 character.setWetStatus(100);
+                character.setWetStage(3);
                 statusProgress = character.getWetStatus();
                 statusBar.setProgress(statusProgress);
                 break;
@@ -124,35 +128,28 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onResume() {
         super.onResume();
+        count = 0;
         //ドライヤーの準備ができているときに録音処理を開始する
-        if(isDryer) {
             soundDetection = new SoundDetection();
             soundDetection.setOnReachedVolumeListener(new SoundDetection.OnReachedVolumeListener() {
                 //音を感知したら呼び出される
                 public void onReachedVolume(short volume) {
-                    //別スレッドからUIスレッドに処理を投げる
+                    //soundDetectionのスレッドからUIスレッドに描画更新処理を投げる
                     runnable = new Runnable() {
                         @Override
                         public void run() {
-                            Log.i("MYTAG", "OK");
-                            character.drying();
-
-                            //フィールドの更新
-                            experienceProgress = character.getExperienceNow();
-                            statusProgress = character.getWetStatus();
-                            //UIの更新
-                            txtDPoint.setText(String.valueOf(character.getdPoint()));
-                            txtLevel.setText(String.valueOf(character.getLevel()));
-                            experienceBar.setProgress(experienceProgress);
-                            statusBar.setProgress(statusProgress);
-                            //3秒間隔で実行
-                            handler.postDelayed(this, 3000);
+                            if(isDryer){
+                                count++;
+                                if(count % 20 == 0){
+                                    character.drying();
+                                    uiUpdate();
+                                }
+                            }
                         }
                     };
                     handler.post(runnable);
                 }
             });
-        }
         //別のスレッドとして録音開始
         new Thread(soundDetection).start();
     }
@@ -192,7 +189,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public void dryerInit(){
         isDryer = false;
         ((FrameLayout)imgDryer.getParent()).removeView(imgDryer);
+    }
 
+    public void uiUpdate(){
+        //フィールドの更新
+        experienceProgress = character.getExperienceNow();
+        statusProgress = character.getWetStatus();
+        //UIの更新
+        txtDPoint.setText(String.valueOf(character.getdPoint()));
+        txtLevel.setText(String.valueOf(character.getLevel()));
+        experienceBar.setProgress(experienceProgress);
+        statusBar.setProgress(statusProgress);
     }
 
     public void readCharacterInformationFromSharedPreferences(){
@@ -200,7 +207,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         character.setdPoint(sharedPreferences.getInt("key_dPoint", 0));
         character.setExperienceNow(sharedPreferences.getInt("key_experienceNow", 0));
         character.setLevel(sharedPreferences.getInt("key_level", 1));
-        character.setWetStage(sharedPreferences.getInt("key_wetStage", 4));
+        character.setWetStage(sharedPreferences.getInt("key_wetStage", 3));
         character.setWetStatus(sharedPreferences.getInt("key_wetAStatus", 100));
     }
 
