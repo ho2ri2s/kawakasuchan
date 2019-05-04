@@ -1,7 +1,6 @@
 package com.kurus.kawakasuchan;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -14,6 +13,8 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import io.realm.Realm;
+
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnDragListener, View.OnClickListener {
 
     private TextView txtDPoint, txtLevel;
@@ -25,28 +26,24 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private Runnable runnable;
     private Character character;
     private FrameLayout frameLayout;
-    private int experienceProgress, statusProgress;
-    private int dryerWidth, dryerHeight;
     private int count;
     private float dryerX;
     private float dryerY;
     private boolean onImgCharacter;
     private boolean isDryer;
-    private SharedPreferences sharedPreferences;
-    private long startTime;
+    private Realm realm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        realm = Realm.getDefaultInstance();
+
         isDryer = false;
         dryerX = 0;
         dryerY = 0;
-        experienceProgress = 0;
-        statusProgress = 0;
         character = new Character();
-        startTime = 0;
         onImgCharacter = false;
 
         //UIとの関連付け
@@ -61,25 +58,30 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         frameLayout = (FrameLayout)findViewById(R.id.frameLayout);
         imgCharacter = (ImageView)findViewById(R.id.imgCharacter);
 
-        dryerWidth = imgDryer.getWidth();
-        dryerHeight = imgDryer.getHeight();
-
-
-        //ProgressBarの初期化
-        experienceBar.setMax(100);
-        experienceBar.setProgress(experienceProgress);
-        statusBar.setMax(100);
-        statusBar.setProgress(statusProgress);
-
-
         imgDryer.setOnTouchListener(this);
         frameLayout.setOnDragListener(this);
         btnBath.setOnClickListener(this);
         btnShopping.setOnClickListener(this);
-//        imgCharacter.setOnDragListener(this);
 
+        //始めてアプリ起動時にキャラ初期化
+        if(realm.where(Character.class).findFirst() == null){
+            realm.executeTransaction(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    Character character = realm.createObject(Character.class);
+                    character.setdPoint(0);
+                    character.setLevel(1);
+                    character.setWetStage(3);
+                    character.setWetStatus(100);
+                    character.setExperienceNow(0);
+                    character.setIsCharacter(true);
+
+                    uiUpdate();
+                }
+            });
+        }
         //端末に保存されているキャラクター情報を読み込む
-        readCharacterInformationFromSharedPreferences();
+        showData();
     }
 
     @Override
@@ -118,10 +120,21 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public void onClick(View view) {
         switch (view.getId()){
             case R.id.btnBath:
-                character.setWetStatus(100);
-                character.setWetStage(3);
-                statusProgress = character.getWetStatus();
-                statusBar.setProgress(statusProgress);
+                final Character character = realm
+                        .where(Character.class)
+                        .equalTo("isCharacter", true)
+                        .findFirst();
+
+                realm.executeTransaction(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        character.setWetStatus(100);
+                        character.setWetStage(3);
+                    }
+                });
+
+                uiUpdate();
+
                 break;
             case R.id.btnShopping:
                 Intent intent = new Intent(MainActivity.this, ShopActivity.class);
@@ -146,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                             if(isDryer){
                                 count++;
                                 if(count % 20 == 0){
-                                    character.drying();
+                                    drying();
                                     uiUpdate();
                                 }
                             }
@@ -168,12 +181,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         //handlerとrunnableとの関係を切る
         handler.removeCallbacks(runnable);
         //キャラクター情報を端末に保存する
-        saveCharacterInformationFromSharedPreferences();
 
+        saveValue();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        realm.close();
+    }
 
-//    ドライヤー画像を生成
+    //    ドライヤー画像を生成
     public void addImage(){
         if(onImgCharacter){
             FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(imgDryer.getWidth(), imgDryer.getHeight());
@@ -196,36 +214,80 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         ((FrameLayout)imgDryer.getParent()).removeView(imgDryer);
     }
 
+    public void drying(){
+
+        final Character character = realm
+                .where(Character.class)
+                .equalTo("isCharacter", true)
+                .findFirst();
+
+        realm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                //髪が濡れている状態なら3秒に1メーター減らし、濡段階が1段階減るごとに経験値とDポイントをゲットする。
+                if(character.getWetStage() > 0){
+                    character.setWetStatus(character.getWetStatus() - 1);
+                    if(character.getWetStatus() % 25 == 0){
+                        //1段階下がるごとに
+                        character.setWetStage(character.getWetStatus() - 1);
+                        //経験値と
+                        character.setExperienceNow(character.getExperienceNow() + 25);
+                        if(character.getExperienceNow() >= 100){
+                            character.setLevel(character.getLevel() + 1);
+                            character.setExperienceNow(character.getExperienceNow() - 100);
+                        }
+                        //ポイントが得られる
+                        character.setdPoint(character.getdPoint() + 100);
+                    }
+                }
+            }
+        });
+
+    }
+
     public void uiUpdate(){
-        //フィールドの更新
-        experienceProgress = character.getExperienceNow();
-        statusProgress = character.getWetStatus();
-        //UIの更新
+
+        final Character character = realm
+                .where(Character.class)
+                .equalTo("isCharacter", true)
+                .findFirst();
+
         txtDPoint.setText(String.valueOf(character.getdPoint()));
         txtLevel.setText(String.valueOf(character.getLevel()));
-        experienceBar.setProgress(experienceProgress);
-        statusBar.setProgress(statusProgress);
-    }
+        experienceBar.setProgress(character.getExperienceNow());
+        statusBar.setProgress(character.getWetStatus());
 
-    public void readCharacterInformationFromSharedPreferences(){
-        sharedPreferences = getSharedPreferences("characterInformation", MODE_PRIVATE);
-        character.setdPoint(sharedPreferences.getInt("key_dPoint", 0));
-        character.setExperienceNow(sharedPreferences.getInt("key_experienceNow", 0));
-        character.setLevel(sharedPreferences.getInt("key_level", 1));
-        character.setWetStage(sharedPreferences.getInt("key_wetStage", 3));
-        character.setWetStatus(sharedPreferences.getInt("key_wetAStatus", 100));
-    }
-
-    public void saveCharacterInformationFromSharedPreferences(){
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putInt("key_dPoint", character.getdPoint());
-        editor.putInt("key_experienceNow", character.getExperienceNow());
-        editor.putInt("key_level", character.getLevel());
-        editor.putInt("key_wetStage", character.getWetStage());
-        editor.putInt("key_wetAStatus", character.getWetStatus());
     }
 
 
+    public void showData(){
+        Character character = realm
+                .where(Character.class)
+                .equalTo("isCharacter", true)
+                .findFirst();
+        txtDPoint.setText(String.valueOf(character.getdPoint()));
+        txtLevel.setText(String.valueOf(character.getLevel()));
+        statusBar.setProgress(character.getWetStatus());
+        experienceBar.setProgress(character.getExperienceNow());
+    }
+
+    public void saveValue(){
+        final Character character = realm
+                .where(Character.class)
+                .equalTo("isCharacter", true)
+                .findFirst();
+
+        realm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                character.setdPoint(Integer.parseInt(txtDPoint.getText().toString()));
+                character.setLevel(Integer.parseInt(txtLevel.getText().toString()));
+                character.setWetStatus(statusBar.getProgress());
+                character.setExperienceNow(experienceBar.getProgress());
+                character.setWetStage(statusBar.getProgress() / 25);
+            }
+        });
+    }
 
 }
 

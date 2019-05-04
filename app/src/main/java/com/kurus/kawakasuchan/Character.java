@@ -1,6 +1,8 @@
 package com.kurus.kawakasuchan;
 
-public class Character {
+import io.realm.RealmObject;
+
+public class Character extends RealmObject {
     
     //ドライヤーポイント
     private int dPoint;
@@ -10,41 +12,11 @@ public class Character {
     private  int level;
     //濡れメーター0~100
     private int wetStatus;
-    //濡ている段階0~3ステージまで
+    //濡れている段階0~3ステージまで
     private int wetStage;
-    
-    public Character(){
-        dPoint = 0;
-        experienceNow = 0;
-        level = 1;
-        //初めは乾いている状態
-        wetStatus = 0;
-        wetStage = 0;
-    }
-    
-    public void drying(){
+    //キャラが存在するか
+    private boolean isCharacter;
 
-        //髪が濡れている状態なら3秒に1メーター減らし、濡段階が1段階減るごとに経験値とDポイントをゲットする。
-        if(wetStage != 0){
-            wetStatus--;
-            if(wetStatus % 25 == 0){
-                wetStage--;
-                expGenerate();
-                dpGenerate();
-            }
-        }
-    }
-
-    public void expGenerate(){
-        experienceNow += 25;
-        if(experienceNow >= 100){
-            level++;
-            experienceNow =0;
-        }
-    }
-    public void dpGenerate(){
-        dPoint += 100;
-    }
 
     public int getExperienceNow(){
         return experienceNow;
@@ -59,6 +31,7 @@ public class Character {
     public int getWetStatus() {
         return wetStatus;
     }
+    public boolean getIsCharacter(){return isCharacter;}
 
 
     public void setdPoint(int dPoint) {
@@ -81,4 +54,5 @@ public class Character {
         this.wetStage = wetStage;
     }
 
+    public void setIsCharacter(boolean isCharacter){ this.isCharacter = isCharacter;}
 }
