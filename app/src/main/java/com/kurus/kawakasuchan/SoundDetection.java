@@ -14,8 +14,7 @@ public class SoundDetection implements Runnable {
     //サンプリングレート 44.1kHz
     private static final int SAMPLE_RATE = 44100;
     //ボーダー音量
-    // TODO: 2019/04/02 ドライヤーが起動したとわかるような音量を設定 
-    private short borderVolume = 6000;
+    private short borderVolume = 8000;
 
 
     public void setBorderVolume(short borderVolume){
@@ -60,7 +59,6 @@ public class SoundDetection implements Runnable {
 
             short maxVolume = 0;
             for(int i = 0; i < buffersize; i++){
-                // TODO: 2019/04/02 minVolumeを定義。ボーダーよりも小さければ読み込み終了。 
                 maxVolume = (short)Math.max(maxVolume, buffer[i]);
                 if(maxVolume > borderVolume){
                     if(this.listener != null){

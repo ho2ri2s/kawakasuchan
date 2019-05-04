@@ -1,5 +1,6 @@
 package com.kurus.kawakasuchan;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
@@ -74,6 +75,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         imgDryer.setOnTouchListener(this);
         frameLayout.setOnDragListener(this);
         btnBath.setOnClickListener(this);
+        btnShopping.setOnClickListener(this);
 //        imgCharacter.setOnDragListener(this);
 
         //端末に保存されているキャラクター情報を読み込む
@@ -121,6 +123,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 statusProgress = character.getWetStatus();
                 statusBar.setProgress(statusProgress);
                 break;
+            case R.id.btnShopping:
+                Intent intent = new Intent(MainActivity.this, ShopActivity.class);
+                startActivity(intent);
         }
     }
 
