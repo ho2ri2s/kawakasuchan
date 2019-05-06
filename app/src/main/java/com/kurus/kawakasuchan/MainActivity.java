@@ -1,8 +1,12 @@
 package com.kurus.kawakasuchan;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.view.DragEvent;
 import android.view.MotionEvent;
@@ -12,14 +16,17 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import io.realm.Realm;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnDragListener, View.OnClickListener {
 
-    private TextView txtDPoint, txtLevel;
+    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 1000;
+
+    private TextView txtDPoint, txtLevel, txtExperience;
     private ImageView imgDryer, imgCharacter;
-    private Button btnShopping, btnBath, btnDress;
+    private Button btnShopping, btnBath, btnCustomize;
     private ProgressBar experienceBar, statusBar;
     private SoundDetection soundDetection;
     private Handler handler = new Handler();
@@ -47,48 +54,62 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         onImgCharacter = false;
 
         //UIとの関連付け
-        txtDPoint = (TextView)findViewById(R.id.txtDPoint);
-        txtLevel = (TextView)findViewById(R.id.txtLevel);
-        imgDryer = (ImageView)findViewById(R.id.imgDryer);
-        btnShopping = (Button)findViewById(R.id.btnShopping);
-        btnBath = (Button)findViewById(R.id.btnBath);
-        btnDress = (Button)findViewById(R.id.btnDress);
-        experienceBar = (ProgressBar)findViewById(R.id.experienceBar);
-        statusBar = (ProgressBar)findViewById(R.id.statusBar);
-        frameLayout = (FrameLayout)findViewById(R.id.frameLayout);
-        imgCharacter = (ImageView)findViewById(R.id.imgCharacter);
+        txtDPoint = findViewById(R.id.txtDPoint);
+        txtLevel = findViewById(R.id.txtLevel);
+        imgDryer = findViewById(R.id.imgDryer);
+        btnShopping = findViewById(R.id.btnShopping);
+        btnBath = findViewById(R.id.btnBath);
+        btnCustomize = findViewById(R.id.btnCustomize);
+        experienceBar = findViewById(R.id.experienceBar);
+        statusBar = findViewById(R.id.statusBar);
+        frameLayout = findViewById(R.id.frameLayout);
+        imgCharacter = findViewById(R.id.imgCharacter);
+        txtExperience = findViewById(R.id.txtExperience);
 
         imgDryer.setOnTouchListener(this);
         frameLayout.setOnDragListener(this);
         btnBath.setOnClickListener(this);
         btnShopping.setOnClickListener(this);
+        btnCustomize.setOnClickListener(this);
+        //マイク使用許可を乞う
+        requestPermission();
 
-        //始めてアプリ起動時にキャラ初期化
-        if(realm.where(Character.class).findFirst() == null){
-            realm.executeTransaction(new Realm.Transaction() {
-                @Override
-                public void execute(Realm realm) {
-                    Character character = realm.createObject(Character.class);
-                    character.setdPoint(0);
-                    character.setLevel(1);
-                    character.setWetStage(3);
-                    character.setWetStatus(100);
-                    character.setExperienceNow(0);
-                    character.setIsCharacter(true);
-
-                    uiUpdate();
-                }
-            });
+        //始めてアプリ起動時
+        if (realm.where(Character.class).findFirst() == null) {
+            //キャラ初期化
+            initCharacter();
         }
+
         //端末に保存されているキャラクター情報を読み込む
         showData();
     }
 
+    private void requestPermission() {
+        if (Build.VERSION.SDK_INT >= 23 &&
+                checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                        != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},
+                    REQUEST_RECORD_AUDIO_PERMISSION);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_RECORD_AUDIO_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "ありがとう！！", Toast.LENGTH_SHORT).show();
+            } else {
+
+            }
+        }
+    }
+
     @Override
     public boolean onTouch(View view, MotionEvent event) {
-        switch (event.getAction()){
+        switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                view.startDrag(null, new View.DragShadowBuilder(view), (Object)view, 0);
+                view.startDrag(null, new View.DragShadowBuilder(view), (Object) view, 0);
                 break;
         }
         return false;   //他のリスナイベントを発生させる(false)
@@ -96,7 +117,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     @Override
     public boolean onDrag(View view, DragEvent event) {
-        switch (event.getAction()){
+        switch (event.getAction()) {
             case DragEvent.ACTION_DRAG_STARTED:
                 onImgCharacter = true;
                 return true;
@@ -118,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     @Override
     public void onClick(View view) {
-        switch (view.getId()){
+        switch (view.getId()) {
             case R.id.btnBath:
                 final Character character = realm
                         .where(Character.class)
@@ -137,8 +158,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
                 break;
             case R.id.btnShopping:
-                Intent intent = new Intent(MainActivity.this, ShopActivity.class);
-                startActivity(intent);
+                Intent shopIntent = new Intent(MainActivity.this, ShopActivity.class);
+                startActivity(shopIntent);
+                break;
+            case R.id.btnCustomize:
+                Intent customizeIntent = new Intent(MainActivity.this, CustomizeActivity.class);
+                startActivity(customizeIntent);
+                break;
         }
     }
 
@@ -148,26 +174,26 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         super.onResume();
         count = 0;
         //ドライヤーの準備ができているときに録音処理を開始する
-            soundDetection = new SoundDetection();
-            soundDetection.setOnReachedVolumeListener(new SoundDetection.OnReachedVolumeListener() {
-                //音を感知したら呼び出される
-                public void onReachedVolume(short volume) {
-                    //soundDetectionのスレッドからUIスレッドに描画更新処理を投げる
-                    runnable = new Runnable() {
-                        @Override
-                        public void run() {
-                            if(isDryer){
-                                count++;
-                                if(count % 20 == 0){
-                                    drying();
-                                    uiUpdate();
-                                }
+        soundDetection = new SoundDetection();
+        soundDetection.setOnReachedVolumeListener(new SoundDetection.OnReachedVolumeListener() {
+            //音を感知したら呼び出される
+            public void onReachedVolume(short volume) {
+                //soundDetectionのスレッドからUIスレッドに描画更新処理を投げる
+                runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        if (isDryer) {
+                            count++;
+                            if (count % 20 == 0) {
+                                drying();
+                                uiUpdate();
                             }
                         }
-                    };
-                    handler.post(runnable);
-                }
-            });
+                    }
+                };
+                handler.post(runnable);
+            }
+        });
         //別のスレッドとして録音開始
         new Thread(soundDetection).start();
     }
@@ -192,15 +218,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     //    ドライヤー画像を生成
-    public void addImage(){
-        if(onImgCharacter){
+    public void addImage() {
+        if (onImgCharacter) {
             FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(imgDryer.getWidth(), imgDryer.getHeight());
             imgDryer = new ImageView(getApplicationContext());
             imgDryer.setImageResource(R.drawable.dryer);
 
             frameLayout.addView(imgDryer, layoutParams);
-            imgDryer.setTranslationX(dryerX  - 100); //imgDryer.getHeight() / 2 は,ずれちゃう
-            imgDryer.setTranslationY(dryerY  - 100); //imgDryer.getHeight() / 2 は,ずれちゃう
+            imgDryer.setTranslationX(dryerX - 100); //imgDryer.getHeight() / 2 は,ずれちゃう
+            imgDryer.setTranslationY(dryerY - 100); //imgDryer.getHeight() / 2 は,ずれちゃう
 
             imgDryer.setOnTouchListener(this);
             isDryer = true;
@@ -209,12 +235,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
     //初期化
-    public void dryerInit(){
+    public void dryerInit() {
         isDryer = false;
-        ((FrameLayout)imgDryer.getParent()).removeView(imgDryer);
+        ((FrameLayout) imgDryer.getParent()).removeView(imgDryer);
     }
 
-    public void drying(){
+    public void drying() {
 
         final Character character = realm
                 .where(Character.class)
@@ -225,16 +251,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             @Override
             public void execute(Realm realm) {
                 //髪が濡れている状態なら3秒に1メーター減らし、濡段階が1段階減るごとに経験値とDポイントをゲットする。
-                if(character.getWetStage() > 0){
+                if (character.getWetStage() > 0) {
                     character.setWetStatus(character.getWetStatus() - 1);
-                    if(character.getWetStatus() % 25 == 0){
+                    if (character.getWetStatus() % 25 == 0) {
                         //1段階下がるごとに
                         character.setWetStage(character.getWetStatus() - 1);
                         //経験値と
                         character.setExperienceNow(character.getExperienceNow() + 25);
-                        if(character.getExperienceNow() >= 100){
+                        if (character.getExperienceNow() >= 100) {
                             character.setLevel(character.getLevel() + 1);
                             character.setExperienceNow(character.getExperienceNow() - 100);
+                            Toast.makeText(MainActivity.this, "LevelUp!!", Toast.LENGTH_LONG).show();
                         }
                         //ポイントが得られる
                         character.setdPoint(character.getdPoint() + 100);
@@ -245,22 +272,24 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     }
 
-    public void uiUpdate(){
+    public void uiUpdate() {
 
         final Character character = realm
                 .where(Character.class)
                 .equalTo("isCharacter", true)
                 .findFirst();
 
+        txtExperience.setText("+ " + 25);
         txtDPoint.setText(String.valueOf(character.getdPoint()));
         txtLevel.setText(String.valueOf(character.getLevel()));
         experienceBar.setProgress(character.getExperienceNow());
         statusBar.setProgress(character.getWetStatus());
+        txtExperience.animate().alpha(0f).setDuration(2000);
 
     }
 
 
-    public void showData(){
+    public void showData() {
         Character character = realm
                 .where(Character.class)
                 .equalTo("isCharacter", true)
@@ -271,7 +300,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         experienceBar.setProgress(character.getExperienceNow());
     }
 
-    public void saveValue(){
+    public void saveValue() {
         final Character character = realm
                 .where(Character.class)
                 .equalTo("isCharacter", true)
@@ -287,6 +316,26 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 character.setWetStage(statusBar.getProgress() / 25);
             }
         });
+    }
+
+    public void initCharacter() {
+
+
+        realm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                Character character = realm.createObject(Character.class);
+                character.setdPoint(0);
+                character.setLevel(1);
+                character.setWetStage(3);
+                character.setWetStatus(100);
+                character.setExperienceNow(0);
+                character.setIsCharacter(true);
+
+                uiUpdate();
+            }
+        });
+
     }
 
 }

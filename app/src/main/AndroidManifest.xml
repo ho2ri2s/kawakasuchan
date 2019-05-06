@@ -12,8 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:name=".App">
-        <activity android:name=".CustomizeActivity"></activity>
-        <activity android:name=".ShopActivity" />
+        <activity android:name=".CustomizeActivity"/>
+        <activity android:name=".ShopActivity"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
