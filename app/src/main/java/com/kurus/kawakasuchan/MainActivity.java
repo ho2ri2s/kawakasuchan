@@ -258,6 +258,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         character.setWetStage(character.getWetStatus() - 1);
                         //経験値と
                         character.setExperienceNow(character.getExperienceNow() + 25);
+                        txtExperience.setAlpha(1.0f);
+                        txtExperience.animate().alpha(0f).setDuration(3000);
                         if (character.getExperienceNow() >= 100) {
                             character.setLevel(character.getLevel() + 1);
                             character.setExperienceNow(character.getExperienceNow() - 100);
@@ -279,12 +281,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 .equalTo("isCharacter", true)
                 .findFirst();
 
-        txtExperience.setText("+ " + 25);
         txtDPoint.setText(String.valueOf(character.getdPoint()));
         txtLevel.setText(String.valueOf(character.getLevel()));
         experienceBar.setProgress(character.getExperienceNow());
         statusBar.setProgress(character.getWetStatus());
-        txtExperience.animate().alpha(0f).setDuration(2000);
 
     }
 
