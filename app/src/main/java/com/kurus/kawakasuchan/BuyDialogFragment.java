@@ -61,10 +61,6 @@ public class BuyDialogFragment extends DialogFragment {
                     public void onClick(DialogInterface dialog, int which) {
 
                         dialogFragmentListener.onDialogPositiveButtonClicked();
-                        // TODO: 2019/05/04 対応するポイントを消費する
-                        // TODO: 2019/05/04 imageをSoldOutに変更
-                        // TODO: 2019/05/04 CustomizeActivityでも使えるようにする
-                        // TODO: 2019/05/04 サーバーに保存
 
                     }
                 })

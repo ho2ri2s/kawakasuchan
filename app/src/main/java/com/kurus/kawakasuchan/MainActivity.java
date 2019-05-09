@@ -319,23 +319,24 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     public void initCharacter() {
-
+        //モデルのコンストラクタを呼びたいため、createObjectではなくこの方法
+        final Character character = new Character();
+        final Clothes clothes = new Clothes();
+        final Shoes shoes = new Shoes();
+        final Interior interior = new Interior();
 
         realm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
-                Character character = realm.createObject(Character.class);
-                character.setdPoint(0);
-                character.setLevel(1);
-                character.setWetStage(3);
-                character.setWetStatus(100);
-                character.setExperienceNow(0);
-                character.setIsCharacter(true);
 
-                uiUpdate();
+                realm.copyToRealm(character);
+                realm.copyToRealm(clothes);
+                realm.copyToRealm(shoes);
+                realm.copyToRealm(interior);
+
             }
         });
-
+        uiUpdate();
     }
 
 }
