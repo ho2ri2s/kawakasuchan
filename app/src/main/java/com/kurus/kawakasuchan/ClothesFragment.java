@@ -49,6 +49,9 @@ public class ClothesFragment extends Fragment implements View.OnClickListener, B
         txtDPoint = view.findViewById(R.id.txtDPoint);
         txtLevel = view.findViewById(R.id.txtLevel);
 
+        txtChose = new TextView(getContext());
+        txtChose.setText("");
+
         for (int i = 0; i < imgClothes.length; i++) {
             imgClothes[i].setOnClickListener(this);
         }
@@ -90,14 +93,14 @@ public class ClothesFragment extends Fragment implements View.OnClickListener, B
                 imgGirl.setImageResource(R.drawable.casual_clothes);
                 break;
             case R.id.floatingActionButton:
-                if (txtChose != null) {
+                if (txtChose.getText().toString() != "") {
                     BuyDialogFragment buyDialogFragment = new BuyDialogFragment().newInstance(ClothesFragment.this, "購入", txtChose.getText() + "を購入しますか？");
                     buyDialogFragment.show(getFragmentManager(), "buy");
                 } else {
                     Toast.makeText(getContext(), "アイテムを選択してください", Toast.LENGTH_LONG).show();
                 }
-
                 break;
+
         }
 
     }
@@ -148,6 +151,8 @@ public class ClothesFragment extends Fragment implements View.OnClickListener, B
                     imgClicked.setImageResource(R.drawable.dryer);
                     //クリックイベント削除
                     imgClicked.setOnClickListener(null);
+
+                    txtChose.setText("");
                 } else {
                     Toast.makeText(getContext(), "所持ポイントが足りないよ！", Toast.LENGTH_SHORT).show();
                 }
@@ -156,9 +161,8 @@ public class ClothesFragment extends Fragment implements View.OnClickListener, B
             }
         });
         // TODO: 2019/05/04 imageをSoldOutに変更
-        // TODO: 2019/05/09 購入後クリックイベント削除
         // TODO: 2019/05/04 CustomizeActivityでも使えるようにする
-        // TODO: 2019/05/04 サーバーに保存
+
     }
 
     @Override
