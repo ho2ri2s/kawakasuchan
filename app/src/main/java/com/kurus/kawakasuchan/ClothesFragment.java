@@ -148,9 +148,11 @@ public class ClothesFragment extends Fragment implements View.OnClickListener, B
                     //ポイント欄更新
                     txtDPoint.setText(String.valueOf(realmCharacter.getdPoint()));
                     //購入したらSoldOutに
-                    imgClicked.setImageResource(R.drawable.dryer);
+                    imgClicked.setImageResource(R.drawable.sold_out);
                     //クリックイベント削除
                     imgClicked.setOnClickListener(null);
+
+                    Toast.makeText(getContext(), txtChose.getText() + "を購入したよ！", Toast.LENGTH_SHORT).show();
 
                     txtChose.setText("");
                 } else {
@@ -160,7 +162,6 @@ public class ClothesFragment extends Fragment implements View.OnClickListener, B
 
             }
         });
-        // TODO: 2019/05/04 imageをSoldOutに変更
         // TODO: 2019/05/04 CustomizeActivityでも使えるようにする
 
     }
