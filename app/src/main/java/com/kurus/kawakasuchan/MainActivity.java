@@ -82,6 +82,59 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     }
 
+    //他のアクティビティから帰ってきたときに呼ばれる
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        //端末に保存されているキャラクター情報を読み込む
+        showData();
+
+        count = 0;
+        //ドライヤーの準備ができているときに録音処理を開始する
+        soundDetection = new SoundDetection();
+        soundDetection.setOnReachedVolumeListener(new SoundDetection.OnReachedVolumeListener() {
+            //音を感知したら呼び出される
+            public void onReachedVolume(short volume) {
+                //soundDetectionのスレッドからUIスレッドに描画更新処理を投げる
+                runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        if (isDryer) {
+                            count++;
+                            if (count % 20 == 0) {
+                                drying();
+                                uiUpdate();
+                            }
+                        }
+                    }
+                };
+                handler.post(runnable);
+            }
+        });
+        //別のスレッドとして録音開始
+        new Thread(soundDetection).start();
+    }
+
+    //他のアクティビティに移ったときに呼ばれるメソッド
+    @Override
+    protected void onPause() {
+        super.onPause();
+        //録音停止
+        soundDetection.stop();
+        //handlerとrunnableとの関係を切る
+        handler.removeCallbacks(runnable);
+        //キャラクター情報を端末に保存する
+
+        saveValue();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        realm.close();
+    }
+
     private void requestPermission() {
         if (Build.VERSION.SDK_INT >= 23 &&
                 checkSelfPermission(Manifest.permission.RECORD_AUDIO)
@@ -166,58 +219,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
     }
 
-    //他のアクティビティから帰ってきたときに呼ばれる
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        //端末に保存されているキャラクター情報を読み込む
-        showData();
-
-        count = 0;
-        //ドライヤーの準備ができているときに録音処理を開始する
-        soundDetection = new SoundDetection();
-        soundDetection.setOnReachedVolumeListener(new SoundDetection.OnReachedVolumeListener() {
-            //音を感知したら呼び出される
-            public void onReachedVolume(short volume) {
-                //soundDetectionのスレッドからUIスレッドに描画更新処理を投げる
-                runnable = new Runnable() {
-                    @Override
-                    public void run() {
-                        if (isDryer) {
-                            count++;
-                            if (count % 20 == 0) {
-                                drying();
-                                uiUpdate();
-                            }
-                        }
-                    }
-                };
-                handler.post(runnable);
-            }
-        });
-        //別のスレッドとして録音開始
-        new Thread(soundDetection).start();
-    }
-
-    //他のアクティビティに移ったときに呼ばれるメソッド
-    @Override
-    protected void onPause() {
-        super.onPause();
-        //録音停止
-        soundDetection.stop();
-        //handlerとrunnableとの関係を切る
-        handler.removeCallbacks(runnable);
-        //キャラクター情報を端末に保存する
-
-        saveValue();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        realm.close();
-    }
 
     //    ドライヤー画像を生成
     public void addImage() {
@@ -292,14 +293,23 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
     public void showData() {
-        Character character = realm
-                .where(Character.class)
-                .equalTo("isCharacter", true)
-                .findFirst();
+        Character character = realm.where(Character.class).equalTo("isCharacter", true).findFirst();
+        Clothes clothes = realm.where(Clothes.class).findFirst();
+
+        //キャラ情報
         txtDPoint.setText(String.valueOf(character.getdPoint()));
         txtLevel.setText(String.valueOf(character.getLevel()));
         statusBar.setProgress(character.getWetStatus());
         experienceBar.setProgress(character.getExperienceNow());
+
+        //服情報
+        if(clothes.getBalloonDressStatus() == 2){
+            imgCharacter.setImageResource(R.drawable.balloon_dress);
+        }else if(clothes.getShirtDressStatus() == 2){
+            imgCharacter.setImageResource(R.drawable.shirt_dress);
+        }else if(clothes.getCasualClothesStatus() == 2){
+            imgCharacter.setImageResource(R.drawable.shirt_dress);
+        }
     }
 
     public void saveValue() {

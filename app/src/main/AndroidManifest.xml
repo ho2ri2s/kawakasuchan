@@ -15,7 +15,8 @@
         <activity android:name=".BathActivity"></activity>
         <activity
             android:name=".CustomizeActivity"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar"/>
         <activity
             android:name=".ShopActivity"
             android:screenOrientation="portrait"

@@ -5,15 +5,15 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 
-public class InteriorFragment extends Fragment implements View.OnClickListener {
+public class ShopInteriorFragment extends Fragment implements View.OnClickListener {
 
     ImageView[] imgInterior = new ImageView[5];
     int[] ids = {R.id.imgBed, R.id.imgMirror, R.id.imgBookshelf, R.id.imgSofa, R.id.imgTelevision};
-    public InteriorFragment() {
+
+    public ShopInteriorFragment() {
         // Required empty public constructor
     }
 
@@ -34,17 +34,6 @@ public class InteriorFragment extends Fragment implements View.OnClickListener {
 
 
     @Override
-    public void onClick(View view) {
-        addView(view);
-    }
+    public void onClick(View view) {    }
 
-    private void addView(View view) {
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(180, 180); //数値はpixel
-
-        ImageView addImage = (ImageView)view;
-        FrameLayout frameLayout = view.findViewById(R.id.frameLayout);
-        frameLayout.addView(addImage, params);
-
-
-    }
 }
