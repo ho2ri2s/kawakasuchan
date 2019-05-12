@@ -147,7 +147,7 @@
                     android:text="ベッド" />
 
                 <ImageView
-                    android:id="@+id/imgInterior0"
+                    android:id="@+id/imgBed"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
                     android:foregroundGravity="center"
@@ -190,7 +190,7 @@
                     android:text="化粧台" />
 
                 <ImageView
-                    android:id="@+id/imgInterior1"
+                    android:id="@+id/imgMirror"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
                     android:src="@drawable/mirror" />
@@ -233,7 +233,7 @@
                     android:text="本棚" />
 
                 <ImageView
-                    android:id="@+id/imgInterior2"
+                    android:id="@+id/imgBookshelf"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
                     android:src="@drawable/bookshelf" />
@@ -276,7 +276,7 @@
                     android:text="ソファ" />
 
                 <ImageView
-                    android:id="@+id/imgInterior3"
+                    android:id="@+id/imgSofa"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
                     android:src="@drawable/sofa" />
@@ -319,7 +319,7 @@
                     android:text="テレビ" />
 
                 <ImageView
-                    android:id="@+id/imgInterior4"
+                    android:id="@+id/imgTelevision"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
                     android:src="@drawable/tv" />

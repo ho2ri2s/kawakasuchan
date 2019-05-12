@@ -80,8 +80,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             initCharacter();
         }
 
-        //端末に保存されているキャラクター情報を読み込む
-        showData();
     }
 
     private void requestPermission() {
@@ -172,6 +170,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onResume() {
         super.onResume();
+
+        //端末に保存されているキャラクター情報を読み込む
+        showData();
+
         count = 0;
         //ドライヤーの準備ができているときに録音処理を開始する
         soundDetection = new SoundDetection();
