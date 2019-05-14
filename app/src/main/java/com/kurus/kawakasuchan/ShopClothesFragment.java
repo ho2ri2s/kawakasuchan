@@ -13,6 +13,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import io.realm.Realm;
+import io.realm.RealmList;
 
 
 /**
@@ -26,7 +27,7 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
     private int[] ids = {R.id.imgBalloonDress, R.id.imgShirtDress, R.id.imgCasualClothes};
     private ImageView imgClicked;
     private TextView txtChose;
-    private TextView txtClothesPoint;
+    private TextView txtClothesPrice;
     private TextView txtDPoint;
     private TextView txtLevel;
     private Realm realm;
@@ -105,65 +106,39 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
         LinearLayout parentLinearLayout = (LinearLayout) imgClicked.getParent();
         txtChose = (TextView) parentLinearLayout.getChildAt(0);
         LinearLayout childLinearLayout = (LinearLayout) parentLinearLayout.getChildAt(2);
-        txtClothesPoint = (TextView) childLinearLayout.getChildAt(0);
+        txtClothesPrice = (TextView) childLinearLayout.getChildAt(0);
     }
 
     private void showData() {
         realm = Realm.getDefaultInstance();
-        Clothes realmClothes = realm.where(Clothes.class).findFirst();
         Character realmCharacter = realm.where(Character.class).findFirst();
+        ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
+
+        RealmList<Clothes> clothes = realmItemGroup.getClothes();
 
         txtDPoint.setText(String.valueOf(realmCharacter.getdPoint()));
         txtLevel.setText(String.valueOf(realmCharacter.getLevel()));
-
-        //服の状態を判別し画像にセット
-        switch (realmClothes.getBalloonDressStatus()) {
-            case 0:
-                imgClothes[0].setImageResource(R.drawable.balloon_dress_only);
-                imgClothes[0].setOnClickListener(this);
-                break;
-            case 1:
-                imgClothes[0].setImageResource(R.drawable.sold_out);
-                break;
-            case 2:
-                imgClothes[0].setImageResource(R.drawable.sold_out);
-                imgCharacter.setImageResource(R.drawable.balloon_dress);
-                break;
-        }
-        switch (realmClothes.getShirtDressStatus()) {
-            case 0:
-                imgClothes[1].setImageResource(R.drawable.shirt_dress_only);
-                imgClothes[1].setOnClickListener(this);
-                break;
-            case 1:
-                imgClothes[1].setImageResource(R.drawable.sold_out);
-                break;
-            case 2:
-                imgClothes[1].setImageResource(R.drawable.sold_out);
-                imgCharacter.setImageResource(R.drawable.shirt_dress);
-                break;
-        }
-        switch (realmClothes.getCasualClothesStatus()) {
-            case 0:
-                imgClothes[2].setImageResource(R.drawable.casual_clothes_only);
-                imgClothes[2].setOnClickListener(this);
-                break;
-            case 1:
-                imgClothes[2].setImageResource(R.drawable.sold_out);
-                break;
-            case 2:
-                imgClothes[2].setImageResource(R.drawable.sold_out);
-                imgCharacter.setImageResource(R.drawable.casual_clothes);
-                break;
+        // TODO: 2019/05/12 nullを作らないためnakedにも値を充てる
+        if(realmCharacter.getClothes() != null){
+            imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
         }
 
-
+        for (int i = 0; i < clothes.size(); i++){
+            //服を所持しているならSoldOutに、所持していないなら選択可
+            if(clothes.get(i).getIsHaving() == true){
+                imgClothes[i].setImageResource(R.drawable.sold_out);
+            }else{
+                imgClothes[i].setImageResource(clothes.get(i).getClothesResourceId());
+                imgClothes[i].setOnClickListener(this);
+            }
+        }
+        
     }
 
     @Override
     public void onDialogPositiveButtonClicked() {
         final Character realmCharacter = realm.where(Character.class).findFirst();
-        final Clothes realmClothes = realm.where(Clothes.class).findFirst();
+        final ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
 
         realm.executeTransaction(new Realm.Transaction() {
             @Override
@@ -171,7 +146,7 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
                 int afterPoint = 0;
 
                 try {
-                    afterPoint = realmCharacter.getdPoint() - Integer.parseInt(txtClothesPoint.getText().toString());
+                    afterPoint = realmCharacter.getdPoint() - Integer.parseInt(txtClothesPrice.getText().toString());
 
                 } catch (NumberFormatException e) {
                     Toast.makeText(getContext(), "error : " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -183,13 +158,13 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
                     //購入
                     switch (imgClicked.getId()) {
                         case R.id.imgBalloonDress:
-                            realmClothes.setBalloonDressStatus(1);
+                            realmItemGroup.getClothes().get(0).setIsHaving(true);
                             break;
                         case R.id.imgShirtDress:
-                            realmClothes.setShirtDressStatus(1);
+                            realmItemGroup.getClothes().get(1).setIsHaving(true);
                             break;
                         case R.id.imgCasualClothes:
-                            realmClothes.setCasualClothesStatus(1);
+                            realmItemGroup.getClothes().get(2).setIsHaving(true);
                     }
                     //ポイント欄更新
                     txtDPoint.setText(String.valueOf(realmCharacter.getdPoint()));

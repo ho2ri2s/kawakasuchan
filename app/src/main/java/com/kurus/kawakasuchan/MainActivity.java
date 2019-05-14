@@ -45,8 +45,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        realm = Realm.getDefaultInstance();
-
         isDryer = false;
         dryerX = 0;
         dryerY = 0;
@@ -74,10 +72,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         //マイク使用許可を乞う
         requestPermission();
 
+        realm = Realm.getDefaultInstance();
         //始めてアプリ起動時
         if (realm.where(Character.class).findFirst() == null) {
             //キャラ初期化
-            initCharacter();
+            init();
         }
 
     }
@@ -178,7 +177,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             case DragEvent.ACTION_DROP:
                 dryerX = event.getX();
                 dryerY = event.getY();
-                dryerInit();
+                resetDryer();
                 addImage();
                 break;
             case DragEvent.ACTION_DRAG_ENDED:
@@ -238,7 +237,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
     //初期化
-    public void dryerInit() {
+    public void resetDryer() {
         isDryer = false;
         ((FrameLayout) imgDryer.getParent()).removeView(imgDryer);
     }
@@ -293,22 +292,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
     public void showData() {
-        Character character = realm.where(Character.class).equalTo("isCharacter", true).findFirst();
-        Clothes clothes = realm.where(Clothes.class).findFirst();
+        Character realmCharacter = realm.where(Character.class).equalTo("isCharacter", true).findFirst();
 
         //キャラ情報
-        txtDPoint.setText(String.valueOf(character.getdPoint()));
-        txtLevel.setText(String.valueOf(character.getLevel()));
-        statusBar.setProgress(character.getWetStatus());
-        experienceBar.setProgress(character.getExperienceNow());
-
-        //服情報
-        if(clothes.getBalloonDressStatus() == 2){
-            imgCharacter.setImageResource(R.drawable.balloon_dress);
-        }else if(clothes.getShirtDressStatus() == 2){
-            imgCharacter.setImageResource(R.drawable.shirt_dress);
-        }else if(clothes.getCasualClothesStatus() == 2){
-            imgCharacter.setImageResource(R.drawable.shirt_dress);
+        txtDPoint.setText(String.valueOf(realmCharacter.getdPoint()));
+        txtLevel.setText(String.valueOf(realmCharacter.getLevel()));
+        statusBar.setProgress(realmCharacter.getWetStatus());
+        experienceBar.setProgress(realmCharacter.getExperienceNow());
+        if(realmCharacter.getClothes() != null){
+            imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
         }
     }
 
@@ -330,21 +322,26 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         });
     }
 
-    public void initCharacter() {
+    public void init() {
         //モデルのコンストラクタを呼びたいため、createObjectではなくこの方法
         final Character character = new Character();
-        final Clothes clothes = new Clothes();
-        final Shoes shoes = new Shoes();
-        final Interior interior = new Interior();
 
         realm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
 
                 realm.copyToRealm(character);
-                realm.copyToRealm(clothes);
-                realm.copyToRealm(shoes);
-                realm.copyToRealm(interior);
+                //服を初期化
+                ItemGroup itemGroup = realm.createObject(ItemGroup.class);
+                itemGroup.getClothes().add(new Clothes("バルーンワンピース", R.drawable.balloon_dress_only, R.drawable.balloon_dress, 1000,false));
+                itemGroup.getClothes().add(new Clothes("シャツワンピース", R.drawable.shirt_dress_only, R.drawable.shirt_dress, 2000, false));
+                itemGroup.getClothes().add(new Clothes("カジュアル服", R.drawable.casual_clothes_only, R.drawable.casual_clothes, 3000, false));
+                //インテリアも初期化
+                itemGroup.getInteriors().add(new Interior("ベッド", R.drawable.bed, 550, 250, 284, 1412, 700, false));
+                itemGroup.getInteriors().add(new Interior("窓", R.drawable.window, 550, 400, 670, 600, 5000, false));
+                itemGroup.getInteriors().add(new Interior("化粧台", R.drawable.mirror, 200, 350, 600, 1050, 1500, false));
+                itemGroup.getInteriors().add(new Interior("本棚", R.drawable.bed, 250, 350, 283, 1049, 3000, false));
+                itemGroup.getInteriors().add(new Interior("テレビ", R.drawable.tv, 400, 300, 1000, 1080, 10000, false));
 
             }
         });

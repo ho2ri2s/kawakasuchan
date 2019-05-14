@@ -105,56 +105,28 @@ public class CustomizeClothesFragment extends Fragment implements View.OnClickLi
 
     private void showData() {
         realm = Realm.getDefaultInstance();
-        Clothes realmClothes = realm.where(Clothes.class).findFirst();
         Character realmCharacter = realm.where(Character.class).findFirst();
+        ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
 
         fab.setImageResource(R.drawable.ic_check);
 
         //キャラクター情報をセット
         txtDPoint.setText(String.valueOf(realmCharacter.getdPoint()));
         txtLevel.setText(String.valueOf(realmCharacter.getLevel()));
+        //裸でなければ服を読み込む
+        if(realmCharacter.getClothes() != null){
+            imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
 
-        //服の状態を判別し画像にセット
-        switch (realmClothes.getBalloonDressStatus()) {
-            case 0:
-                imgClothes[0].setImageResource(R.drawable.question);
-                break;
-            case 1:
-                imgClothes[0].setImageResource(R.drawable.balloon_dress_only);
-                imgClothes[0].setOnClickListener(this);
-                break;
-            case 2:
-                imgClothes[0].setImageResource(R.drawable.balloon_dress_only);
-                imgClothes[0].setOnClickListener(this);
-                imgCharacter.setImageResource(R.drawable.balloon_dress);
-                break;
         }
-        switch (realmClothes.getShirtDressStatus()) {
-            case 0:
-                imgClothes[1].setImageResource(R.drawable.question);
-                break;
-            case 1:
-                imgClothes[1].setImageResource(R.drawable.shirt_dress_only);
-                imgClothes[1].setOnClickListener(this);
-                break;
-            case 2:
-                imgClothes[1].setImageResource(R.drawable.shirt_dress_only);
-                imgClothes[1].setOnClickListener(this);
-                imgCharacter.setImageResource(R.drawable.shirt_dress);
-                break;
-        }
-        switch (realmClothes.getCasualClothesStatus()) {
-            case 0:
-                imgClothes[2].setImageResource(R.drawable.question);
-                break;
-            case 1:
-                imgClothes[2].setImageResource(R.drawable.casual_clothes_only);
-                break;
-            case 2:
-                imgClothes[2].setImageResource(R.drawable.casual_clothes_only);
-                imgClothes[2].setOnClickListener(this);
-                imgCharacter.setImageResource(R.drawable.casual_clothes);
-                break;
+
+        for (int i = 0; i < realmItemGroup.getClothes().size(); i++){
+            //服を所持しているならSoldOutに、所持していないなら選択可
+            if(realmItemGroup.getClothes().get(i).getIsHaving() == true){
+                imgClothes[i].setOnClickListener(this);
+                imgClothes[i].setImageResource(realmItemGroup.getClothes().get(i).getClothesResourceId());
+            }else{
+                imgClothes[i].setImageResource(R.drawable.question);
+            }
         }
 
 
@@ -162,7 +134,8 @@ public class CustomizeClothesFragment extends Fragment implements View.OnClickLi
 
     @Override
     public void onDialogPositiveButtonClicked() {
-        final Clothes realmClothes = realm.where(Clothes.class).findFirst();
+        final ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
+        final Character realmCharacter = realm.where(Character.class).findFirst();
 
         realm.executeTransaction(new Realm.Transaction() {
             @Override
@@ -170,13 +143,13 @@ public class CustomizeClothesFragment extends Fragment implements View.OnClickLi
                 // TODO: 2019/05/12 さっきまで選択していた服を脱ぐ
                 switch (imgClicked.getId()) {
                     case R.id.imgBalloonDress:
-                        realmClothes.setBalloonDressStatus(2);
+                        realmCharacter.setClothes(realmItemGroup.getClothes().get(0));
                         break;
                     case R.id.imgShirtDress:
-                        realmClothes.setShirtDressStatus(2);
+                        realmCharacter.setClothes(realmItemGroup.getClothes().get(1));
                         break;
                     case R.id.imgCasualClothes:
-                        realmClothes.setCasualClothesStatus(2);
+                        realmCharacter.setClothes(realmItemGroup.getClothes().get(2));
                         break;
                 }
 

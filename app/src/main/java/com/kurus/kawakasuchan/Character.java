@@ -1,15 +1,21 @@
 package com.kurus.kawakasuchan;
 
+import io.realm.RealmList;
 import io.realm.RealmObject;
 
 public class Character extends RealmObject {
-    
+
+
+    private Clothes clothes;
+    private Shoes shoes;
+    private RealmList<Interior> interiors;
+
     //ドライヤーポイント
     private int dPoint;
     //経験値 0~100
     private int experienceNow;
     //レベル
-    private  int level;
+    private int level;
     //濡れメーター0~100
     private int wetStatus;
     //濡れている段階0~3ステージまで
@@ -17,7 +23,8 @@ public class Character extends RealmObject {
     //キャラが存在するか
     private boolean isCharacter;
 
-    public Character(){
+
+    public Character() {
         this.dPoint = 1000;
         this.experienceNow = 0;
         this.level = 1;
@@ -27,21 +34,41 @@ public class Character extends RealmObject {
     }
 
 
-    public int getExperienceNow(){
+    public int getExperienceNow() {
         return experienceNow;
     }
-    public int getdPoint(){
+
+    public int getdPoint() {
         return dPoint;
     }
-    public int getLevel(){
+
+    public int getLevel() {
         return level;
     }
-    public int getWetStage(){return wetStage;}
+
+    public int getWetStage() {
+        return wetStage;
+    }
+
     public int getWetStatus() {
         return wetStatus;
     }
-    public boolean getIsCharacter(){return isCharacter;}
 
+    public boolean getIsCharacter() {
+        return isCharacter;
+    }
+
+    public Shoes getShoes() {
+        return shoes;
+    }
+
+    public Clothes getClothes() {
+        return clothes;
+    }
+
+    public RealmList<Interior> getInteriors() {
+        return interiors;
+    }
 
     public void setdPoint(int dPoint) {
         this.dPoint = dPoint;
@@ -63,5 +90,21 @@ public class Character extends RealmObject {
         this.wetStage = wetStage;
     }
 
-    public void setIsCharacter(boolean isCharacter){ this.isCharacter = isCharacter;}
+    public void setIsCharacter(boolean isCharacter) {
+        this.isCharacter = isCharacter;
+    }
+
+
+    public void setClothes(Clothes clothes) {
+        this.clothes = clothes;
+    }
+
+
+    public void setShoes(Shoes shoes) {
+        this.shoes = shoes;
+    }
+
+    public void setInteriors(RealmList<Interior> interiors) {
+        this.interiors = interiors;
+    }
 }

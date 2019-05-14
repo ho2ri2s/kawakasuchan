@@ -4,41 +4,62 @@ import io.realm.RealmObject;
 
 public class Clothes extends RealmObject {
 
-    //ステータスが
-    // 0:未所持
-    // 1:所持
-    // 2:着用
-    private int balloonDressStatus;
-    private int shirtDressStatus;
-    private int casualClothesStatus;
+    private String name;
+    private int clothesResourceId;
+    private int characterResourceId;
+    private int price;
+    private boolean isHaving;
 
     public Clothes(){
-        this.balloonDressStatus = 0;
-        this.shirtDressStatus = 0;
-        this.casualClothesStatus = 0;
+
     }
 
-    public int getBalloonDressStatus() {
-        return balloonDressStatus;
+    // TODO: 2019/05/12 素材を全て準備するのではなく服を重ねる感じにしたい
+    public Clothes(String name, int clothesResourceId, int characterResourceId, int price, boolean isHaving){
+        this.name = name;
+        this.clothesResourceId = clothesResourceId;
+        this.characterResourceId = characterResourceId;
+        this.price = price;
+        this.isHaving = isHaving;
     }
 
-    public void setBalloonDressStatus(int balloonDressStatus) {
-        this.balloonDressStatus = balloonDressStatus;
+    public String getName() {
+        return name;
     }
 
-    public int getShirtDressStatus() {
-        return shirtDressStatus;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public void setShirtDressStatus(int shirtDressStatus) {
-        this.shirtDressStatus = shirtDressStatus;
+    public int getClothesResourceId() {
+        return clothesResourceId;
     }
 
-    public int getCasualClothesStatus() {
-        return casualClothesStatus;
+    public void setClothesResourceId(int clothesResourceId) {
+        this.clothesResourceId = clothesResourceId;
     }
 
-    public void setCasualClothesStatus(int casualClothesStatus) {
-        this.casualClothesStatus = casualClothesStatus;
+    public int getCharacterResourceId() {
+        return characterResourceId;
+    }
+
+    public void setCharacterResourceId(int characterResourceId) {
+        this.characterResourceId = characterResourceId;
+    }
+
+    public int getPrice() {
+        return price;
+    }
+
+    public void setPrice(int price) {
+        this.price = price;
+    }
+
+    public boolean getIsHaving() {
+        return isHaving;
+    }
+
+    public void setIsHaving(boolean having) {
+        isHaving = having;
     }
 }
