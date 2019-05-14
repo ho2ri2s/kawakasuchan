@@ -19,21 +19,23 @@ import io.realm.RealmResults;
 
 public class ShopInteriorFragment extends Fragment implements View.OnClickListener, BuyDialogFragment.DialogFragmentListener {
 
+    private static final float LIVING__WIDTH = 1200.0f;
+    private static final float LIVING__HEIGHT = 1920.0f;
+
     private Realm realm;
     private TextView txtChose;
     private TextView txtClothesPrice;
     private TextView txtDPoint;
     private TextView txtLevel;
-    private ImageView imgClicked;
     private ImageView[] imgInterior = new ImageView[5];
+    private ImageView addImage;
     private int[] ids = {R.id.imgBed, R.id.imgWindow, R.id.imgMirror, R.id.imgBookshelf, R.id.imgTelevision};
     private FloatingActionButton fab;
     private FrameLayout frameLayout;
 
     private int frameWidth;
     private int frameHeight;
-    private static final float LIVING__WIDTH = 1208.0f;
-    private static final float LIVING__HEIGHT = 1922.5f;
+    private int choseNumber;
 
     private ViewTreeObserver.OnGlobalLayoutListener globalLayoutListener;
 
@@ -56,6 +58,9 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
         txtLevel = view.findViewById(R.id.txtLevel);
         fab = view.findViewById(R.id.floatingActionButton);
         frameLayout = view.findViewById(R.id.frameLayout);
+
+        txtChose = new TextView(getContext());
+        txtClothesPrice = new TextView(getContext());
 
         fab.setOnClickListener(this);
 
@@ -83,11 +88,17 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
             case R.id.imgMirror:
             case R.id.imgBookshelf:
             case R.id.imgTelevision:
+                choseNumber = Integer.parseInt(view.getTag().toString());
+
                 ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
-                Interior realmInterior = realmItemGroup.getInteriors().get(Integer.parseInt(view.getTag().toString()));
+                Interior realmInterior = realmItemGroup.getInteriors().get(choseNumber);
+
+                frameLayout.removeView(addImage);
                 addImage(realmInterior);
+
                 txtChose.setText(realmInterior.getName());
-                txtClothesPrice.setText(realmInterior.getPrice());
+                txtClothesPrice.setText(String.valueOf(realmInterior.getPrice()));
+                break;
             case R.id.floatingActionButton:
                 if (txtChose.getText().toString() != "") {
                     BuyDialogFragment buyDialogFragment = new BuyDialogFragment().newInstance(ShopInteriorFragment.this, "購入", txtChose.getText() + "を購入しますか？");
@@ -99,25 +110,26 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
         }
     }
 
+
+
     private void showData() {
         realm = Realm.getDefaultInstance();
         Character realmCharacter = realm.where(Character.class).findFirst();
-        ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
-
-        RealmList<Interior> interiors = realmItemGroup.getInteriors();
-
         txtDPoint.setText(String.valueOf(realmCharacter.getdPoint()));
         txtLevel.setText(String.valueOf(realmCharacter.getLevel()));
-        // TODO: 2019/05/12 持っているインテリアを充てる
+
+        // 持っているインテリアを配置する
         if (realmCharacter.getInteriors() != null) {
-            RealmResults<Interior> realmInterior = realmItemGroup.getInteriors().where().equalTo("isHaving", true).findAll();
+            RealmResults<Interior> realmInterior = realmCharacter.getInteriors().where().equalTo("isHaving", true).findAll();
             for(int i = 0; i < realmInterior.size(); i++){
                 addImage(realmInterior.get(i));
             }
         }
 
+        ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
+        RealmList<Interior> interiors = realmItemGroup.getInteriors();
         for (int i = 0; i < interiors.size(); i++) {
-            //服を所持しているならSoldOutに、所持していないなら選択可
+            //インテリアを所持しているならSoldOutに、所持していないなら選択可
             if (interiors.get(i).getIsHaving() == true) {
                 imgInterior[i].setImageResource(R.drawable.sold_out);
             } else {
@@ -127,12 +139,11 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
         }
     }
 
+
     private void addImage(final Interior interior) {
-        //画像設置
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(interior.getWidth(), interior.getHeight());
-        final ImageView image = new ImageView(getContext());
-        image.setImageResource(interior.getResourceId());
-        frameLayout.addView(image, params);
+        //適当に配置
+        addImage = new ImageView(getContext());
+        frameLayout.addView(addImage);
 
         //配置転換
         ViewTreeObserver observer = frameLayout.getViewTreeObserver();
@@ -142,10 +153,17 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
                 //この中で幅と高さを取得
                 frameWidth = frameLayout.getWidth();
                 frameHeight = frameLayout.getHeight();
-                //指定の位置に画像を移動
-                image.setTranslationX(interior.getX() * frameWidth / LIVING__WIDTH - interior.getWidth() / 2);
-                image.setTranslationY(interior.getY() * frameHeight / LIVING__HEIGHT - interior.getHeight() / 2);
-                //一回きり
+
+                //画像詳細を設定
+                final FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                        (int) (interior.getWidth() * frameWidth / LIVING__WIDTH),
+                        (int) (interior.getHeight() * frameHeight / LIVING__HEIGHT));
+                addImage.setImageResource(interior.getResourceId());
+                addImage.setLayoutParams(params);
+                addImage.setTranslationX(interior.getX() * frameWidth / LIVING__WIDTH - addImage.getLayoutParams().width / 2);
+                addImage.setTranslationY(interior.getY() * frameHeight / LIVING__HEIGHT - addImage.getLayoutParams().height / 2);
+
+                //一度呼んだら二度と呼ばない
                 frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
             }
         };
@@ -178,10 +196,11 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
                     //ポイント欄更新
                     txtDPoint.setText(String.valueOf(realmCharacter.getdPoint()));
                     //購入したらSoldOutに
-                    imgClicked.setImageResource(R.drawable.sold_out);
+                    imgInterior[choseNumber].setImageResource(R.drawable.sold_out);
                     //クリックイベント削除
-                    imgClicked.setOnClickListener(null);
-
+                    imgInterior[choseNumber].setOnClickListener(null);
+                    //追加されたImageView削除
+                    frameLayout.removeView(addImage);
                     Toast.makeText(getContext(), txtChose.getText() + "を購入したよ！", Toast.LENGTH_SHORT).show();
 
                     txtChose.setText("");

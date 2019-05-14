@@ -7,10 +7,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.DragEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -19,13 +21,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import io.realm.Realm;
+import io.realm.RealmResults;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnDragListener, View.OnClickListener {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 1000;
+    private static final float LIVING__WIDTH = 1200.0f;
+    private static final float LIVING__HEIGHT = 1920.0f;
 
     private TextView txtDPoint, txtLevel, txtExperience;
     private ImageView imgDryer, imgCharacter;
+    private ImageView addImage;
     private Button btnShopping, btnBath, btnCustomize;
     private ProgressBar experienceBar, statusBar;
     private SoundDetection soundDetection;
@@ -33,12 +39,19 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private Runnable runnable;
     private Character character;
     private FrameLayout frameLayout;
+    private ConstraintLayout constraintLayout;
     private int count;
+    private int constraintWidth;
+    private int constraintHeight;
     private float dryerX;
     private float dryerY;
     private boolean onImgCharacter;
     private boolean isDryer;
     private Realm realm;
+
+
+
+    private ViewTreeObserver.OnGlobalLayoutListener globalLayoutListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         experienceBar = findViewById(R.id.experienceBar);
         statusBar = findViewById(R.id.statusBar);
         frameLayout = findViewById(R.id.frameLayout);
+        constraintLayout = findViewById(R.id.constraintLayout);
         imgCharacter = findViewById(R.id.imgCharacter);
         txtExperience = findViewById(R.id.txtExperience);
 
@@ -178,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 dryerX = event.getX();
                 dryerY = event.getY();
                 resetDryer();
-                addImage();
+                addDryerImage();
                 break;
             case DragEvent.ACTION_DRAG_ENDED:
                 imgDryer.setVisibility(View.VISIBLE);
@@ -220,7 +234,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
     //    ドライヤー画像を生成
-    public void addImage() {
+    public void addDryerImage() {
         if (onImgCharacter) {
             FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(imgDryer.getWidth(), imgDryer.getHeight());
             imgDryer = new ImageView(getApplicationContext());
@@ -299,10 +313,51 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         txtLevel.setText(String.valueOf(realmCharacter.getLevel()));
         statusBar.setProgress(realmCharacter.getWetStatus());
         experienceBar.setProgress(realmCharacter.getExperienceNow());
+        // TODO: 2019/05/14 服
         if(realmCharacter.getClothes() != null){
             imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
         }
+        // 持っているインテリアを配置する
+        if (realmCharacter.getInteriors() != null) {
+            RealmResults<Interior> realmInterior = realmCharacter.getInteriors().where().equalTo("isHaving", true).findAll();
+            for(int i = 0; i < realmInterior.size(); i++){
+                addInteriorImage(realmInterior.get(i));
+            }
+        }
     }
+
+
+
+    public void addInteriorImage(final Interior interior) {
+        //適当に配置
+        addImage = new ImageView(MainActivity.this);
+        constraintLayout.addView(addImage);
+
+        //配置転換
+        ViewTreeObserver observer = constraintLayout.getViewTreeObserver();
+        globalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                //この中で幅と高さを取得
+                constraintWidth = constraintLayout.getWidth();
+                constraintHeight = constraintLayout.getHeight();
+
+                //画像詳細を設定
+                final ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(
+                        (int) (interior.getWidth() * constraintWidth / LIVING__WIDTH),
+                        (int) (interior.getHeight() * constraintHeight / LIVING__HEIGHT));
+                addImage.setImageResource(interior.getResourceId());
+                addImage.setLayoutParams(params);
+                addImage.setTranslationX(interior.getX() * constraintWidth / LIVING__WIDTH - addImage.getLayoutParams().width / 2);
+                addImage.setTranslationY(interior.getY() * constraintHeight / LIVING__HEIGHT - addImage.getLayoutParams().height / 2);
+
+                //一度呼んだら二度と呼ばない
+                constraintLayout.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+            }
+        };
+        observer.addOnGlobalLayoutListener(globalLayoutListener);
+    }
+
 
     public void saveValue() {
         final Character character = realm
@@ -340,7 +395,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 itemGroup.getInteriors().add(new Interior("ベッド", R.drawable.bed, 550, 250, 284, 1412, 700, false));
                 itemGroup.getInteriors().add(new Interior("窓", R.drawable.window, 550, 400, 670, 600, 5000, false));
                 itemGroup.getInteriors().add(new Interior("化粧台", R.drawable.mirror, 200, 350, 600, 1050, 1500, false));
-                itemGroup.getInteriors().add(new Interior("本棚", R.drawable.bed, 250, 350, 283, 1049, 3000, false));
+                itemGroup.getInteriors().add(new Interior("本棚", R.drawable.bookshelf, 250, 350, 283, 1049, 3000, false));
                 itemGroup.getInteriors().add(new Interior("テレビ", R.drawable.tv, 400, 300, 1000, 1080, 10000, false));
 
             }
