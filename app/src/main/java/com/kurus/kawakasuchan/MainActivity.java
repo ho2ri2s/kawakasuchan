@@ -21,7 +21,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import io.realm.Realm;
-import io.realm.RealmResults;
+import io.realm.RealmList;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnDragListener, View.OnClickListener {
 
@@ -31,7 +31,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private TextView txtDPoint, txtLevel, txtExperience;
     private ImageView imgDryer, imgCharacter;
-    private ImageView addImage;
     private Button btnShopping, btnBath, btnCustomize;
     private ProgressBar experienceBar, statusBar;
     private SoundDetection soundDetection;
@@ -50,7 +49,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private Realm realm;
 
 
-
     private ViewTreeObserver.OnGlobalLayoutListener globalLayoutListener;
 
     @Override
@@ -61,7 +59,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         isDryer = false;
         dryerX = 0;
         dryerY = 0;
-        character = new Character();
         onImgCharacter = false;
 
         //UIとの関連付け
@@ -219,6 +216,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 });
 
                 uiUpdate();
+                Intent bathIntent = new Intent(MainActivity.this, BathActivity.class);
+                startActivity(bathIntent);
 
                 break;
             case R.id.btnShopping:
@@ -314,30 +313,38 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         statusBar.setProgress(realmCharacter.getWetStatus());
         experienceBar.setProgress(realmCharacter.getExperienceNow());
         // TODO: 2019/05/14 服
-        if(realmCharacter.getClothes() != null){
+        if (realmCharacter.getClothes() != null) {
             imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
         }
-        // 持っているインテリアを配置する
-        if (realmCharacter.getInteriors() != null) {
-            RealmResults<Interior> realmInterior = realmCharacter.getInteriors().where().equalTo("isHaving", true).findAll();
-            for(int i = 0; i < realmInterior.size(); i++){
-                addInteriorImage(realmInterior.get(i));
+        // インテリアを配置する
+        RealmList<Interior> realmInteriors = realmCharacter.getInteriors();
+        if (realmInteriors.size() > 0) {
+            for (int i = 0; i < realmInteriors.size(); i++) {
+                addInteriorImage(realmInteriors.get(i));
             }
         }
+        // TODO: 2019/05/17 前面に出す方法?
+//        //ドライヤー・キャラクターを常に前面に持ってくる
+//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+//            LinearLayout linearLayoutOfChara = findViewById(R.id.linearLayoutOfChara);
+//            linearLayoutOfChara.requestLayout();
+//            linearLayoutOfChara.invalidate();
+//        }
+//        imgCharacter.bringToFront();
+//        imgDryer.bringToFront();
+//        imgCharacter.invalidate();
+//        imgDryer.invalidate();
     }
-
 
 
     public void addInteriorImage(final Interior interior) {
         //適当に配置
-        addImage = new ImageView(MainActivity.this);
-        addImage.setVisibility(View.GONE);
-
+        final ImageView addImage = new ImageView(MainActivity.this);
         //配置転換
         ViewTreeObserver observer = constraintLayout.getViewTreeObserver();
-        if(globalLayoutListener != null){
-            frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
-        }
+//        if (globalLayoutListener != null) {
+//            frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+//        }
 
         globalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
@@ -358,7 +365,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 //一度呼んだら二度と呼ばない
                 frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
 
-                addImage.setVisibility(View.VISIBLE);
             }
         };
 
@@ -396,7 +402,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 realm.copyToRealm(character);
                 //服を初期化
                 ItemGroup itemGroup = realm.createObject(ItemGroup.class);
-                itemGroup.getClothes().add(new Clothes("バルーンワンピース", R.drawable.balloon_dress_only, R.drawable.balloon_dress, 1000,false));
+                itemGroup.getClothes().add(new Clothes("バルーンワンピース", R.drawable.balloon_dress_only, R.drawable.balloon_dress, 1000, false));
                 itemGroup.getClothes().add(new Clothes("シャツワンピース", R.drawable.shirt_dress_only, R.drawable.shirt_dress, 2000, false));
                 itemGroup.getClothes().add(new Clothes("カジュアル服", R.drawable.casual_clothes_only, R.drawable.casual_clothes, 3000, false));
                 //インテリアも初期化

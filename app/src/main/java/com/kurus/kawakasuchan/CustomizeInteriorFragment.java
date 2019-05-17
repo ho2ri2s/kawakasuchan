@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,9 +15,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.HashMap;
+
 import io.realm.Realm;
 import io.realm.RealmList;
-import io.realm.RealmResults;
 
 public class CustomizeInteriorFragment extends Fragment implements View.OnClickListener, BuyDialogFragment.DialogFragmentListener {
 
@@ -25,27 +27,30 @@ public class CustomizeInteriorFragment extends Fragment implements View.OnClickL
 
     private Realm realm;
     private TextView txtChose;
-    private TextView txtClothesPrice;
     private TextView txtDPoint;
     private TextView txtLevel;
     private ImageView[] imgInterior = new ImageView[5];
-    private ImageView addImage;
     private int[] ids = {R.id.imgBed, R.id.imgWindow, R.id.imgMirror, R.id.imgBookshelf, R.id.imgTelevision};
     private FloatingActionButton fab;
     private FrameLayout frameLayout;
 
+    private HashMap<String, ImageView> hashMap;
     private int frameWidth;
     private int frameHeight;
     private int choseNumber;
 
     private ViewTreeObserver.OnGlobalLayoutListener globalLayoutListener;
 
-    public CustomizeInteriorFragment(){
+    public CustomizeInteriorFragment() {
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+
+        choseNumber = -1;
+        txtChose = new TextView(getContext());
+        hashMap = new HashMap<String, ImageView>();
 
         View view = inflater.inflate(R.layout.fragment_interior, container, false);
         for (int i = 0; i < imgInterior.length; i++) {
@@ -57,8 +62,6 @@ public class CustomizeInteriorFragment extends Fragment implements View.OnClickL
         fab = view.findViewById(R.id.floatingActionButton);
         frameLayout = view.findViewById(R.id.frameLayout);
 
-        txtChose = new TextView(getContext());
-        txtClothesPrice = new TextView(getContext());
 
         fab.setOnClickListener(this);
 
@@ -80,26 +83,53 @@ public class CustomizeInteriorFragment extends Fragment implements View.OnClickL
 
     @Override
     public void onClick(View view) {
+        ItemGroup realmItemGroup;
+        Interior realmInterior;
+        Character realmCharacter;
         switch (view.getId()) {
             case R.id.imgBed:
             case R.id.imgWindow:
             case R.id.imgMirror:
             case R.id.imgBookshelf:
             case R.id.imgTelevision:
+                realmItemGroup = realm.where(ItemGroup.class).findFirst();
+                realmCharacter = realm.where(Character.class).findFirst();
+                if (choseNumber != -1) {
+                    //1つ前に選択されていたインテリアに関しての処理
+                    imgInterior[choseNumber].setBackground(null);
+                    realmInterior = realmItemGroup.getInteriors().get(choseNumber);
+                    if(!realmCharacter.getInteriors().contains(realmInterior)){
+                        frameLayout.removeView(hashMap.get(realmInterior.getName()));
+                    }
+                }
+
                 choseNumber = Integer.parseInt(view.getTag().toString());
+                imgInterior[choseNumber].setBackground(getResources().getDrawable(R.drawable.text_border));
+                realmInterior = realmItemGroup.getInteriors().get(choseNumber);
 
-                ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
-                Interior realmInterior = realmItemGroup.getInteriors().get(choseNumber);
-
-                frameLayout.removeView(addImage);
-                addImage(realmInterior);
+                if(!realmCharacter.getInteriors().contains(realmInterior)){
+                    addImage(realmInterior);
+                }
 
                 txtChose.setText(realmInterior.getName());
-                txtClothesPrice.setText(String.valueOf(realmInterior.getPrice()));
                 break;
             case R.id.floatingActionButton:
+                realmCharacter = realm.where(Character.class).findFirst();
+                realmItemGroup = realm.where(ItemGroup.class).findFirst();
+                realmInterior = realmItemGroup.getInteriors().get(choseNumber);
                 if (txtChose.getText().toString() != "") {
-                    BuyDialogFragment buyDialogFragment = new BuyDialogFragment().newInstance(CustomizeInteriorFragment.this, "変更", txtChose.getText() + "カスタマイズしますか？");
+                    BuyDialogFragment buyDialogFragment;
+                    if (!realmCharacter.getInteriors().contains(realmInterior)) {
+                        buyDialogFragment = new BuyDialogFragment().newInstance(
+                                CustomizeInteriorFragment.this,
+                                "設置",
+                                txtChose.getText() + "設置しますか？");
+                    } else {
+                        buyDialogFragment = new BuyDialogFragment().newInstance(
+                                CustomizeInteriorFragment.this,
+                                "片付け",
+                                txtChose.getText() + "片付けますか？");
+                    }
                     buyDialogFragment.show(getFragmentManager(), "buy");
                 } else {
                     Toast.makeText(getContext(), "アイテムを選択してください", Toast.LENGTH_LONG).show();
@@ -109,20 +139,20 @@ public class CustomizeInteriorFragment extends Fragment implements View.OnClickL
     }
 
 
-
     private void showData() {
         fab.setImageResource(R.drawable.ic_check);
 
         realm = Realm.getDefaultInstance();
         Character realmCharacter = realm.where(Character.class).findFirst();
+
         txtDPoint.setText(String.valueOf(realmCharacter.getdPoint()));
         txtLevel.setText(String.valueOf(realmCharacter.getLevel()));
 
         // 持っているインテリアを配置する
-        if (realmCharacter.getInteriors() != null) {
-            RealmResults<Interior> realmInterior = realmCharacter.getInteriors().where().equalTo("isHaving", true).findAll();
-            for(int i = 0; i < realmInterior.size(); i++){
-                addImage(realmInterior.get(i));
+        RealmList<Interior> realmInteriors = realmCharacter.getInteriors();
+        if (realmInteriors.size() > 0) {
+            for (int i = 0; i < realmInteriors.size(); i++) {
+                addImage(realmInteriors.get(i));
             }
         }
 
@@ -142,15 +172,15 @@ public class CustomizeInteriorFragment extends Fragment implements View.OnClickL
 
     private void addImage(final Interior interior) {
         //適当に配置
-        addImage = new ImageView(getContext());
+        final ImageView addImage = new ImageView(getContext());
         addImage.setVisibility(View.GONE);
 
         //配置転換
         ViewTreeObserver observer = frameLayout.getViewTreeObserver();
 
-        if(globalLayoutListener != null){
-            frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
-        }
+//        if(globalLayoutListener != null){
+//            frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+//        }
 
         globalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
@@ -176,6 +206,8 @@ public class CustomizeInteriorFragment extends Fragment implements View.OnClickL
             }
         };
         frameLayout.addView(addImage);
+        hashMap.put(interior.getName(), addImage);
+        Log.d("MYTAG", addImage + "");
 
         observer.addOnGlobalLayoutListener(globalLayoutListener);
     }
@@ -189,13 +221,15 @@ public class CustomizeInteriorFragment extends Fragment implements View.OnClickL
         realm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
-                if(!realmCharacter.getInteriors().contains(realmInterior)){
+                if (!realmCharacter.getInteriors().contains(realmInterior)) {
                     realmCharacter.getInteriors().add(realmInterior);
-                    Toast.makeText(getContext(),  realmInterior.getName() + "を配置したよ！", Toast.LENGTH_SHORT).show();
-                }else{
+                    Toast.makeText(getContext(), realmInterior.getName() + "を配置したよ！", Toast.LENGTH_SHORT).show();
+                } else {
                     realmCharacter.getInteriors().remove(realmInterior);
-                    frameLayout.removeView(addImage);
-                    Toast.makeText(getContext(),  realmInterior.getName() + "を片付けたよ！", Toast.LENGTH_SHORT).show();
+                    frameLayout.removeView(hashMap.get(realmInterior.getName()));
+                    Log.d("MYTAG", hashMap.get(realmInterior.getName()) + "");
+                    hashMap.remove(realmInterior.getName());
+                    Toast.makeText(getContext(), realmInterior.getName() + "を片付けたよ！", Toast.LENGTH_SHORT).show();
                 }
             }
         });

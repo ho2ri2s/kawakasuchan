@@ -9,7 +9,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,6 +27,8 @@ public class CustomizeClothesFragment extends Fragment implements View.OnClickLi
     private TextView txtLevel;
     private Realm realm;
 
+    private int choseNumber;
+
     public CustomizeClothesFragment() {
     }
 
@@ -36,6 +37,8 @@ public class CustomizeClothesFragment extends Fragment implements View.OnClickLi
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 
         View view = inflater.inflate(R.layout.fragment_clothes, container, false);
+
+        choseNumber = -1;
 
         fab = view.findViewById(R.id.floatingActionButton);
         imgCharacter = view.findViewById(R.id.imgCharacter);
@@ -70,16 +73,20 @@ public class CustomizeClothesFragment extends Fragment implements View.OnClickLi
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.imgBalloonDress:
-                getImageInfo(view);
-                imgCharacter.setImageResource(R.drawable.balloon_dress);
-                break;
             case R.id.imgShirtDress:
-                getImageInfo(view);
-                imgCharacter.setImageResource(R.drawable.shirt_dress);
-                break;
             case R.id.imgCasualClothes:
-                getImageInfo(view);
-                imgCharacter.setImageResource(R.drawable.casual_clothes);
+                if(choseNumber != -1){
+                    imgClothes[choseNumber].setBackground(null);
+                }
+                choseNumber = Integer.parseInt(view.getTag().toString());
+                imgClothes[choseNumber].setBackground(getResources().getDrawable(R.drawable.text_border));
+
+                ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
+                Clothes realmClothes = realmItemGroup.getClothes().get(choseNumber);
+
+                imgCharacter.setImageResource(realmClothes.getCharacterResourceId());
+
+                txtChose.setText(realmClothes.getName());
                 break;
             case R.id.floatingActionButton:
                 if (txtChose.getText().toString() != "") {
@@ -94,14 +101,6 @@ public class CustomizeClothesFragment extends Fragment implements View.OnClickLi
 
     }
 
-    private void getImageInfo(View view) {
-        //選択された画像のテキストを読み込む
-        imgClicked = (ImageView) view;
-        LinearLayout parentLinearLayout = (LinearLayout) imgClicked.getParent();
-        txtChose = (TextView) parentLinearLayout.getChildAt(0);
-        LinearLayout childLinearLayout = (LinearLayout) parentLinearLayout.getChildAt(2);
-        txtClothesPoint = (TextView) childLinearLayout.getChildAt(0);
-    }
 
     private void showData() {
         realm = Realm.getDefaultInstance();
@@ -136,22 +135,13 @@ public class CustomizeClothesFragment extends Fragment implements View.OnClickLi
     public void onDialogPositiveButtonClicked() {
         final ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
         final Character realmCharacter = realm.where(Character.class).findFirst();
+        final Clothes realmClothes = realmItemGroup.getClothes().where().equalTo("name", txtChose.getText().toString()).findFirst();
 
         realm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
-                // TODO: 2019/05/12 さっきまで選択していた服を脱ぐ
-                switch (imgClicked.getId()) {
-                    case R.id.imgBalloonDress:
-                        realmCharacter.setClothes(realmItemGroup.getClothes().get(0));
-                        break;
-                    case R.id.imgShirtDress:
-                        realmCharacter.setClothes(realmItemGroup.getClothes().get(1));
-                        break;
-                    case R.id.imgCasualClothes:
-                        realmCharacter.setClothes(realmItemGroup.getClothes().get(2));
-                        break;
-                }
+
+                realmCharacter.setClothes(realmClothes);
 
                 Toast.makeText(getContext(), txtChose.getText() + "に着替えたよ！", Toast.LENGTH_SHORT).show();
                 txtChose.setText("");

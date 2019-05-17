@@ -143,11 +143,13 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/linearLayoutOfChara"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_gravity="center"
             android:layout_weight="10"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:clipChildren="false">
 
             <FrameLayout
                 android:id="@+id/frameLayout"

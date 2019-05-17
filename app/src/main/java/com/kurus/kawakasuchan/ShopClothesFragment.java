@@ -32,6 +32,8 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
     private TextView txtLevel;
     private Realm realm;
 
+    private int choseNumber;
+
     public ShopClothesFragment() {
         // Required empty public constructor
     }
@@ -42,6 +44,8 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_clothes, container, false);
+
+        choseNumber = -1;
 
         fab = view.findViewById(R.id.floatingActionButton);
         imgCharacter = view.findViewById(R.id.imgCharacter);
@@ -76,16 +80,20 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.imgBalloonDress:
-                getImageInfo(view);
-                imgCharacter.setImageResource(R.drawable.balloon_dress);
-                break;
             case R.id.imgShirtDress:
-                getImageInfo(view);
-                imgCharacter.setImageResource(R.drawable.shirt_dress);
-                break;
             case R.id.imgCasualClothes:
-                getImageInfo(view);
-                imgCharacter.setImageResource(R.drawable.casual_clothes);
+                if(choseNumber != -1){
+                    imgClothes[choseNumber].setBackground(null);
+                }
+                choseNumber = Integer.parseInt(view.getTag().toString());
+                imgClothes[choseNumber].setBackground(getResources().getDrawable(R.drawable.text_border));
+
+                ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
+                Clothes realmClothes = realmItemGroup.getClothes().get(choseNumber);
+
+                imgCharacter.setImageResource(realmClothes.getCharacterResourceId());
+
+                txtChose.setText(realmClothes.getName());
                 break;
             case R.id.floatingActionButton:
                 if (txtChose.getText().toString() != "") {

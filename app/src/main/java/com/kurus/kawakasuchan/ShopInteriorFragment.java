@@ -87,13 +87,16 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
             case R.id.imgMirror:
             case R.id.imgBookshelf:
             case R.id.imgTelevision:
+                if(choseNumber != -1){
+                    imgInterior[choseNumber].setBackground(null);
+                }
                 choseNumber = Integer.parseInt(view.getTag().toString());
+                imgInterior[choseNumber].setBackground(getResources().getDrawable(R.drawable.text_border));
 
                 ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
                 Interior realmInterior = realmItemGroup.getInteriors().get(choseNumber);
-                if(addImage != null){
-                    frameLayout.removeView(addImage);
-                }
+
+                frameLayout.removeView(addImage);
                 addImage(realmInterior);
 
                 txtChose.setText(realmInterior.getName());

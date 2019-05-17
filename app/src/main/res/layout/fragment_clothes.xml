@@ -151,7 +151,8 @@
                     android:id="@+id/imgBalloonDress"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
-                    android:src="@drawable/balloon_dress_only" />
+                    android:src="@drawable/balloon_dress_only"
+                    android:tag="0" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -193,7 +194,8 @@
                     android:id="@+id/imgShirtDress"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
-                    android:src="@drawable/shirt_dress_only" />
+                    android:src="@drawable/shirt_dress_only"
+                    android:tag="1" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -236,7 +238,8 @@
                     android:id="@+id/imgCasualClothes"
                     android:layout_width="100dp"
                     android:layout_height="100dp"
-                    android:src="@drawable/casual_clothes_only" />
+                    android:src="@drawable/casual_clothes_only"
+                    android:tag="2" />
 
                 <LinearLayout
                     android:layout_width="match_parent"

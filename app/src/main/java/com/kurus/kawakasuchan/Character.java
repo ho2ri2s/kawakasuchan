@@ -25,7 +25,7 @@ public class Character extends RealmObject {
 
 
     public Character() {
-        this.dPoint = 10000;
+        this.dPoint = 100000;
         this.experienceNow = 0;
         this.level = 1;
         this.wetStatus = 100;
