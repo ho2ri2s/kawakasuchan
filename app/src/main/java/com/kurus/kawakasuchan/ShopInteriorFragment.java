@@ -14,7 +14,6 @@ import android.widget.Toast;
 
 import io.realm.Realm;
 import io.realm.RealmList;
-import io.realm.RealmResults;
 
 
 public class ShopInteriorFragment extends Fragment implements View.OnClickListener, BuyDialogFragment.DialogFragmentListener {
@@ -92,8 +91,9 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
 
                 ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
                 Interior realmInterior = realmItemGroup.getInteriors().get(choseNumber);
-
-                frameLayout.removeView(addImage);
+                if(addImage != null){
+                    frameLayout.removeView(addImage);
+                }
                 addImage(realmInterior);
 
                 txtChose.setText(realmInterior.getName());
@@ -120,9 +120,9 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
 
         // 持っているインテリアを配置する
         if (realmCharacter.getInteriors() != null) {
-            RealmResults<Interior> realmInterior = realmCharacter.getInteriors().where().equalTo("isHaving", true).findAll();
-            for(int i = 0; i < realmInterior.size(); i++){
-                addImage(realmInterior.get(i));
+            RealmList<Interior> realmInteriorList = realmCharacter.getInteriors();
+            for(int i = 0; i < realmInteriorList.size(); i++){
+                addImage(realmInteriorList.get(i));
             }
         }
 
@@ -143,10 +143,14 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
     private void addImage(final Interior interior) {
         //適当に配置
         addImage = new ImageView(getContext());
-        frameLayout.addView(addImage);
+        addImage.setVisibility(View.GONE);
 
         //配置転換
         ViewTreeObserver observer = frameLayout.getViewTreeObserver();
+        if(globalLayoutListener != null){
+            frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+        }
+
         globalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
@@ -164,9 +168,12 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
                 addImage.setTranslationY(interior.getY() * frameHeight / LIVING__HEIGHT - addImage.getLayoutParams().height / 2);
 
                 //一度呼んだら二度と呼ばない
-                frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+                frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+                addImage.setVisibility(View.VISIBLE);
             }
         };
+        frameLayout.addView(addImage);
         observer.addOnGlobalLayoutListener(globalLayoutListener);
     }
 

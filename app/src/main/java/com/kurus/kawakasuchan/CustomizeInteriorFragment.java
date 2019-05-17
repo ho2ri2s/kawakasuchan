@@ -143,10 +143,15 @@ public class CustomizeInteriorFragment extends Fragment implements View.OnClickL
     private void addImage(final Interior interior) {
         //適当に配置
         addImage = new ImageView(getContext());
-        frameLayout.addView(addImage);
+        addImage.setVisibility(View.GONE);
 
         //配置転換
         ViewTreeObserver observer = frameLayout.getViewTreeObserver();
+
+        if(globalLayoutListener != null){
+            frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+        }
+
         globalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
@@ -164,9 +169,14 @@ public class CustomizeInteriorFragment extends Fragment implements View.OnClickL
                 addImage.setTranslationY(interior.getY() * frameHeight / LIVING__HEIGHT - addImage.getLayoutParams().height / 2);
 
                 //一度呼んだら二度と呼ばない
-                frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+                frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+
+                addImage.setVisibility(View.VISIBLE);
             }
         };
+        frameLayout.addView(addImage);
+
         observer.addOnGlobalLayoutListener(globalLayoutListener);
     }
 

@@ -331,10 +331,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public void addInteriorImage(final Interior interior) {
         //適当に配置
         addImage = new ImageView(MainActivity.this);
-        constraintLayout.addView(addImage);
+        addImage.setVisibility(View.GONE);
 
         //配置転換
         ViewTreeObserver observer = constraintLayout.getViewTreeObserver();
+        if(globalLayoutListener != null){
+            frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+        }
+
         globalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
@@ -352,9 +356,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 addImage.setTranslationY(interior.getY() * constraintHeight / LIVING__HEIGHT - addImage.getLayoutParams().height / 2);
 
                 //一度呼んだら二度と呼ばない
-                constraintLayout.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+                frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+                addImage.setVisibility(View.VISIBLE);
             }
         };
+
+        constraintLayout.addView(addImage);
         observer.addOnGlobalLayoutListener(globalLayoutListener);
     }
 
