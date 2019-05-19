@@ -9,13 +9,17 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.DragEvent;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -31,6 +35,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private TextView txtDPoint, txtLevel, txtExperience;
     private ImageView imgDryer, imgCharacter;
+    private ImageButton btnDryerBack;
     private Button btnShopping, btnBath, btnCustomize;
     private ProgressBar experienceBar, statusBar;
     private SoundDetection soundDetection;
@@ -64,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         txtDPoint = findViewById(R.id.txtDPoint);
         txtLevel = findViewById(R.id.txtLevel);
         imgDryer = findViewById(R.id.imgDryer);
+        btnDryerBack = findViewById(R.id.btnDryerBack);
         btnShopping = findViewById(R.id.btnShopping);
         btnBath = findViewById(R.id.btnBath);
         btnCustomize = findViewById(R.id.btnCustomize);
@@ -75,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         txtExperience = findViewById(R.id.txtExperience);
 
         imgDryer.setOnTouchListener(this);
+        btnDryerBack.setOnClickListener(this);
         frameLayout.setOnDragListener(this);
         btnBath.setOnClickListener(this);
         btnShopping.setOnClickListener(this);
@@ -170,6 +177,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 view.startDrag(null, new View.DragShadowBuilder(view), (Object) view, 0);
+                Log.d("MYTAG", "ACTION_DOWN");
+                isDryer = true;
                 break;
         }
         return false;   //他のリスナイベントを発生させる(false)
@@ -187,11 +196,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             case DragEvent.ACTION_DROP:
                 dryerX = event.getX();
                 dryerY = event.getY();
-                resetDryer();
                 addDryerImage();
                 break;
             case DragEvent.ACTION_DRAG_ENDED:
-                imgDryer.setVisibility(View.VISIBLE);
+//                imgDryer.setVisibility(View.VISIBLE);
                 break;
         }
         return false;
@@ -212,13 +220,21 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 Intent customizeIntent = new Intent(MainActivity.this, CustomizeActivity.class);
                 startActivity(customizeIntent);
                 break;
+            case R.id.btnDryerBack:
+                resetDryer();
+                Log.d("MYTAG", "ONCLICK");
+                break;
         }
     }
 
 
     //    ドライヤー画像を生成
     public void addDryerImage() {
-        if (onImgCharacter) {
+        if(onImgCharacter) {
+
+
+            ((FrameLayout) imgDryer.getParent()).removeView(imgDryer);
+
             FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(imgDryer.getWidth(), imgDryer.getHeight());
             imgDryer = new ImageView(getApplicationContext());
             imgDryer.setImageResource(R.drawable.dryer);
@@ -226,10 +242,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             frameLayout.addView(imgDryer, layoutParams);
             imgDryer.setTranslationX(dryerX - 100); //imgDryer.getHeight() / 2 は,ずれちゃう
             imgDryer.setTranslationY(dryerY - 100); //imgDryer.getHeight() / 2 は,ずれちゃう
-
             imgDryer.setOnTouchListener(this);
-            isDryer = true;
         }
+
     }
 
 
@@ -237,6 +252,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public void resetDryer() {
         isDryer = false;
         ((FrameLayout) imgDryer.getParent()).removeView(imgDryer);
+
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(imgDryer.getWidth(), imgDryer.getHeight());
+        layoutParams.gravity = Gravity.RIGHT;
+        imgDryer = new ImageView(getApplicationContext());
+        imgDryer.setImageResource(R.drawable.dryer);
+
+        frameLayout.addView(imgDryer, layoutParams);
+        imgDryer.setOnTouchListener(this);
+
     }
 
     public void drying() {
@@ -307,17 +331,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 addInteriorImage(realmInteriors.get(i));
             }
         }
-        // TODO: 2019/05/17 前面に出す方法?
-//        //ドライヤー・キャラクターを常に前面に持ってくる
-//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-//            LinearLayout linearLayoutOfChara = findViewById(R.id.linearLayoutOfChara);
-//            linearLayoutOfChara.requestLayout();
-//            linearLayoutOfChara.invalidate();
-//        }
-//        imgCharacter.bringToFront();
-//        imgDryer.bringToFront();
-//        imgCharacter.invalidate();
-//        imgDryer.invalidate();
+        //ドライヤー・キャラクターを常に前面に持ってくる
+        LinearLayout origin = findViewById(R.id.origin);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            origin.requestLayout();
+            origin.invalidate();
+        }
+        origin.bringToFront();
+        origin.invalidate();
     }
 
 
