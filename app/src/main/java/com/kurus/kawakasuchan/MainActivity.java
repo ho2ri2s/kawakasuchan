@@ -202,23 +202,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btnBath:
-                final Character character = realm
-                        .where(Character.class)
-                        .equalTo("isCharacter", true)
-                        .findFirst();
-
-                realm.executeTransaction(new Realm.Transaction() {
-                    @Override
-                    public void execute(Realm realm) {
-                        character.setWetStatus(100);
-                        character.setWetStage(3);
-                    }
-                });
-
-                uiUpdate();
                 Intent bathIntent = new Intent(MainActivity.this, BathActivity.class);
                 startActivity(bathIntent);
-
                 break;
             case R.id.btnShopping:
                 Intent shopIntent = new Intent(MainActivity.this, ShopActivity.class);
@@ -407,9 +392,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 itemGroup.getClothes().add(new Clothes("カジュアル服", R.drawable.casual_clothes_only, R.drawable.casual_clothes, 3000, false));
                 //インテリアも初期化
                 itemGroup.getInteriors().add(new Interior("ベッド", R.drawable.bed, 550, 250, 284, 1412, 700, false));
-                itemGroup.getInteriors().add(new Interior("窓", R.drawable.window, 550, 400, 670, 600, 5000, false));
-                itemGroup.getInteriors().add(new Interior("化粧台", R.drawable.mirror, 200, 350, 600, 1050, 1500, false));
-                itemGroup.getInteriors().add(new Interior("本棚", R.drawable.bookshelf, 250, 350, 283, 1049, 3000, false));
+                itemGroup.getInteriors().add(new Interior("窓", R.drawable.window, 550, 400, 670, 600, 1500, false));
+                itemGroup.getInteriors().add(new Interior("化粧台", R.drawable.mirror, 200, 350, 600, 1050, 3000, false));
+                itemGroup.getInteriors().add(new Interior("本棚", R.drawable.bookshelf, 250, 350, 283, 1049, 5000, false));
                 itemGroup.getInteriors().add(new Interior("テレビ", R.drawable.tv, 400, 300, 1000, 1080, 10000, false));
 
             }

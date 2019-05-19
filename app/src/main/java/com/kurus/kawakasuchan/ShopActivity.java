@@ -4,11 +4,9 @@ import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 
 public class ShopActivity extends AppCompatActivity {
 
-    Toolbar toolbar;
     TabLayout tabLayout;
     ViewPager viewPager;
     TabAdapter tabAdapter;
@@ -18,8 +16,7 @@ public class ShopActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_shop);
 
-        toolbar = findViewById(R.id.myToolbar);
-        setSupportActionBar(toolbar);
+        setTitle("お買い物");
 
         tabAdapter = new TabAdapter(getSupportFragmentManager(), ShopActivity.this);
         viewPager = findViewById(R.id.viewPager);

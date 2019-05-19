@@ -1,14 +1,12 @@
 package com.kurus.kawakasuchan;
 
+import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
 
 public class CustomizeActivity extends AppCompatActivity {
 
-    Toolbar toolbar;
     TabLayout tabLayout;
     ViewPager viewPager;
     TabAdapter tabAdapter;
@@ -18,10 +16,9 @@ public class CustomizeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_customize);
 
-        toolbar = findViewById(R.id.myToolbar);
-        setSupportActionBar(toolbar);
+        setTitle("着せ替え");
 
-        TabAdapter tabAdapter = new TabAdapter(getSupportFragmentManager(), CustomizeActivity.this);
+        tabAdapter = new TabAdapter(getSupportFragmentManager(), CustomizeActivity.this);
         viewPager = findViewById(R.id.viewPager);
         viewPager.setAdapter(tabAdapter);
 

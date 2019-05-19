@@ -12,6 +12,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.HashMap;
+
 import io.realm.Realm;
 import io.realm.RealmList;
 
@@ -23,15 +25,16 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
 
     private Realm realm;
     private TextView txtChose;
-    private TextView txtClothesPrice;
     private TextView txtDPoint;
     private TextView txtLevel;
+    private TextView[] txtInteriorPrice = new TextView[5];
     private ImageView[] imgInterior = new ImageView[5];
-    private ImageView addImage;
-    private int[] ids = {R.id.imgBed, R.id.imgWindow, R.id.imgMirror, R.id.imgBookshelf, R.id.imgTelevision};
+    private int[] imageID = {R.id.imgBed, R.id.imgWindow, R.id.imgMirror, R.id.imgBookshelf, R.id.imgTelevision};
+    private int[] priceID = {R.id.txtBedDP, R.id.txtWindowDP, R.id.txtMirrorDP, R.id.txtBookShelfDP, R.id.txtTelevisionDP};
     private FloatingActionButton fab;
     private FrameLayout frameLayout;
 
+    private HashMap<String, ImageView> hashMap;
     private int frameWidth;
     private int frameHeight;
     private int choseNumber;
@@ -46,11 +49,16 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        choseNumber = -1;
+        hashMap = new HashMap<String, ImageView>();
+        txtChose = new TextView(getContext());
+
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_interior, container, false);
 
         for (int i = 0; i < imgInterior.length; i++) {
-            imgInterior[i] = view.findViewById(ids[i]);
+            imgInterior[i] = view.findViewById(imageID[i]);
+            txtInteriorPrice[i] = view.findViewById(priceID[i]);
         }
 
         txtDPoint = view.findViewById(R.id.txtDPoint);
@@ -58,8 +66,6 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
         fab = view.findViewById(R.id.floatingActionButton);
         frameLayout = view.findViewById(R.id.frameLayout);
 
-        txtChose = new TextView(getContext());
-        txtClothesPrice = new TextView(getContext());
 
         fab.setOnClickListener(this);
 
@@ -81,26 +87,33 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
 
     @Override
     public void onClick(View view) {
+        ItemGroup realmItemGroup;
+        Interior realmInterior;
+        Character realmCharacter;
         switch (view.getId()) {
             case R.id.imgBed:
             case R.id.imgWindow:
             case R.id.imgMirror:
             case R.id.imgBookshelf:
             case R.id.imgTelevision:
-                if(choseNumber != -1){
+                realmItemGroup = realm.where(ItemGroup.class).findFirst();
+                realmCharacter = realm.where(Character.class).findFirst();
+                if (choseNumber != -1) {
                     imgInterior[choseNumber].setBackground(null);
+                    realmInterior = realmItemGroup.getInteriors().get(choseNumber);
+
+                    frameLayout.removeView(hashMap.get(realmInterior.getName()));
+
                 }
                 choseNumber = Integer.parseInt(view.getTag().toString());
                 imgInterior[choseNumber].setBackground(getResources().getDrawable(R.drawable.text_border));
+                realmInterior = realmItemGroup.getInteriors().get(choseNumber);
 
-                ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
-                Interior realmInterior = realmItemGroup.getInteriors().get(choseNumber);
-
-                frameLayout.removeView(addImage);
-                addImage(realmInterior);
+                if (!realmCharacter.getInteriors().contains(realmInterior)) {
+                    addImage(realmInterior);
+                }
 
                 txtChose.setText(realmInterior.getName());
-                txtClothesPrice.setText(String.valueOf(realmInterior.getPrice()));
                 break;
             case R.id.floatingActionButton:
                 if (txtChose.getText().toString() != "") {
@@ -114,7 +127,6 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
     }
 
 
-
     private void showData() {
         realm = Realm.getDefaultInstance();
         Character realmCharacter = realm.where(Character.class).findFirst();
@@ -124,7 +136,7 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
         // 持っているインテリアを配置する
         if (realmCharacter.getInteriors() != null) {
             RealmList<Interior> realmInteriorList = realmCharacter.getInteriors();
-            for(int i = 0; i < realmInteriorList.size(); i++){
+            for (int i = 0; i < realmInteriorList.size(); i++) {
                 addImage(realmInteriorList.get(i));
             }
         }
@@ -132,6 +144,7 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
         ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
         RealmList<Interior> interiors = realmItemGroup.getInteriors();
         for (int i = 0; i < interiors.size(); i++) {
+            txtInteriorPrice[i].setText(interiors.get(i).getPrice() + "    DP");
             //インテリアを所持しているならSoldOutに、所持していないなら選択可
             if (interiors.get(i).getIsHaving() == true) {
                 imgInterior[i].setImageResource(R.drawable.sold_out);
@@ -145,14 +158,11 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
 
     private void addImage(final Interior interior) {
         //適当に配置
-        addImage = new ImageView(getContext());
+        final ImageView addImage = new ImageView(getContext());
         addImage.setVisibility(View.GONE);
 
         //配置転換
         ViewTreeObserver observer = frameLayout.getViewTreeObserver();
-        if(globalLayoutListener != null){
-            frameLayout.getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
-        }
 
         globalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
@@ -177,6 +187,7 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
             }
         };
         frameLayout.addView(addImage);
+        hashMap.put(interior.getName(), addImage);
         observer.addOnGlobalLayoutListener(globalLayoutListener);
     }
 
@@ -192,7 +203,7 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
                 int afterPoint = 0;
 
                 try {
-                    afterPoint = realmCharacter.getdPoint() - Integer.parseInt(txtClothesPrice.getText().toString());
+                    afterPoint = realmCharacter.getdPoint() - realmInterior.getPrice();
 
                 } catch (NumberFormatException e) {
                     Toast.makeText(getContext(), "error : " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -210,7 +221,7 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
                     //クリックイベント削除
                     imgInterior[choseNumber].setOnClickListener(null);
                     //追加されたImageView削除
-                    frameLayout.removeView(addImage);
+                    frameLayout.removeView(hashMap.get(realmInterior.getName()));
                     Toast.makeText(getContext(), txtChose.getText() + "を購入したよ！", Toast.LENGTH_SHORT).show();
 
                     txtChose.setText("");

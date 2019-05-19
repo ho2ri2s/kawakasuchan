@@ -8,7 +8,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,12 +21,13 @@ import io.realm.RealmList;
 public class ShopClothesFragment extends Fragment implements View.OnClickListener, BuyDialogFragment.DialogFragmentListener {
 
     private FloatingActionButton fab;
-    private ImageView imgCharacter;
-    private ImageView[] imgClothes = new ImageView[3];
-    private int[] ids = {R.id.imgBalloonDress, R.id.imgShirtDress, R.id.imgCasualClothes};
-    private ImageView imgClicked;
     private TextView txtChose;
-    private TextView txtClothesPrice;
+    private TextView[] txtClothesPrice = new TextView[3];
+    private ImageView[] imgClothes = new ImageView[3];
+    private int[] clothesID = {R.id.imgBalloonDress, R.id.imgShirtDress, R.id.imgCasualClothes};
+    private int[] priceID = {R.id.txtBalloonDressDP, R.id.txtShirtDressDP, R.id.txtCasualClothesDP};
+    private ImageView imgCharacter;
+
     private TextView txtDPoint;
     private TextView txtLevel;
     private Realm realm;
@@ -47,11 +47,12 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
 
         choseNumber = -1;
 
+        for (int i = 0; i < imgClothes.length; i++) {
+            imgClothes[i] = view.findViewById(clothesID[i]);
+            txtClothesPrice[i] = view.findViewById(priceID[i]);
+        }
         fab = view.findViewById(R.id.floatingActionButton);
         imgCharacter = view.findViewById(R.id.imgCharacter);
-        for (int i = 0; i < imgClothes.length; i++) {
-            imgClothes[i] = view.findViewById(ids[i]);
-        }
         txtDPoint = view.findViewById(R.id.txtDPoint);
         txtLevel = view.findViewById(R.id.txtLevel);
 
@@ -108,14 +109,6 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
 
     }
 
-    private void getImageInfo(View view) {
-        //選択された画像のテキストを読み込む
-        imgClicked = (ImageView) view;
-        LinearLayout parentLinearLayout = (LinearLayout) imgClicked.getParent();
-        txtChose = (TextView) parentLinearLayout.getChildAt(0);
-        LinearLayout childLinearLayout = (LinearLayout) parentLinearLayout.getChildAt(2);
-        txtClothesPrice = (TextView) childLinearLayout.getChildAt(0);
-    }
 
     private void showData() {
         realm = Realm.getDefaultInstance();
@@ -132,6 +125,7 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
         }
 
         for (int i = 0; i < clothes.size(); i++){
+            txtClothesPrice[i].setText(clothes.get(i).getPrice() + "    DP");
             //服を所持しているならSoldOutに、所持していないなら選択可
             if(clothes.get(i).getIsHaving() == true){
                 imgClothes[i].setImageResource(R.drawable.sold_out);
@@ -147,6 +141,7 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
     public void onDialogPositiveButtonClicked() {
         final Character realmCharacter = realm.where(Character.class).findFirst();
         final ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
+        final Clothes realmClothes = realmItemGroup.getClothes().where().equalTo("name", txtChose.getText().toString()).findFirst();
 
         realm.executeTransaction(new Realm.Transaction() {
             @Override
@@ -154,7 +149,7 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
                 int afterPoint = 0;
 
                 try {
-                    afterPoint = realmCharacter.getdPoint() - Integer.parseInt(txtClothesPrice.getText().toString());
+                    afterPoint = realmCharacter.getdPoint() - realmClothes.getPrice();
 
                 } catch (NumberFormatException e) {
                     Toast.makeText(getContext(), "error : " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -164,22 +159,13 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
                     //ポイント消費
                     realmCharacter.setdPoint(afterPoint);
                     //購入
-                    switch (imgClicked.getId()) {
-                        case R.id.imgBalloonDress:
-                            realmItemGroup.getClothes().get(0).setIsHaving(true);
-                            break;
-                        case R.id.imgShirtDress:
-                            realmItemGroup.getClothes().get(1).setIsHaving(true);
-                            break;
-                        case R.id.imgCasualClothes:
-                            realmItemGroup.getClothes().get(2).setIsHaving(true);
-                    }
+                    realmClothes.setIsHaving(true);
                     //ポイント欄更新
                     txtDPoint.setText(String.valueOf(realmCharacter.getdPoint()));
                     //購入したらSoldOutに
-                    imgClicked.setImageResource(R.drawable.sold_out);
+                    imgClothes[choseNumber].setImageResource(R.drawable.sold_out);
                     //クリックイベント削除
-                    imgClicked.setOnClickListener(null);
+                    imgClothes[choseNumber].setOnClickListener(null);
 
                     Toast.makeText(getContext(), txtChose.getText() + "を購入したよ！", Toast.LENGTH_SHORT).show();
 

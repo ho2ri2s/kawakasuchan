@@ -29,8 +29,10 @@ public class CustomizeInteriorFragment extends Fragment implements View.OnClickL
     private TextView txtChose;
     private TextView txtDPoint;
     private TextView txtLevel;
+    private TextView[] txtInteriorPrice = new TextView[5];
     private ImageView[] imgInterior = new ImageView[5];
-    private int[] ids = {R.id.imgBed, R.id.imgWindow, R.id.imgMirror, R.id.imgBookshelf, R.id.imgTelevision};
+    private int[] ImageID = {R.id.imgBed, R.id.imgWindow, R.id.imgMirror, R.id.imgBookshelf, R.id.imgTelevision};
+    private int[] priceID = {R.id.txtBedDP, R.id.txtWindowDP, R.id.txtMirrorDP, R.id.txtBookShelfDP, R.id.txtTelevisionDP};
     private FloatingActionButton fab;
     private FrameLayout frameLayout;
 
@@ -54,7 +56,8 @@ public class CustomizeInteriorFragment extends Fragment implements View.OnClickL
 
         View view = inflater.inflate(R.layout.fragment_interior, container, false);
         for (int i = 0; i < imgInterior.length; i++) {
-            imgInterior[i] = view.findViewById(ids[i]);
+            imgInterior[i] = view.findViewById(ImageID[i]);
+            txtInteriorPrice[i] = view.findViewById(priceID[i]);
         }
 
         txtDPoint = view.findViewById(R.id.txtDPoint);
@@ -159,6 +162,7 @@ public class CustomizeInteriorFragment extends Fragment implements View.OnClickL
         ItemGroup realmItemGroup = realm.where(ItemGroup.class).findFirst();
         RealmList<Interior> interiors = realmItemGroup.getInteriors();
         for (int i = 0; i < interiors.size(); i++) {
+            txtInteriorPrice[i].setText("");
             //インテリアを所持しているならSoldOutに、所持していないなら選択可
             if (interiors.get(i).getIsHaving() == true) {
                 imgInterior[i].setImageResource(interiors.get(i).getResourceId());
