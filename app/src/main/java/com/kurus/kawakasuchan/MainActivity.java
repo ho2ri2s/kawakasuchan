@@ -36,7 +36,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private SoundDetection soundDetection;
     private Handler handler = new Handler();
     private Runnable runnable;
-    private Character character;
     private FrameLayout frameLayout;
     private ConstraintLayout constraintLayout;
     private int count;
