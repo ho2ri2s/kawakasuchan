@@ -159,12 +159,52 @@
                 android:layout_weight="2">
 
 
-                <ImageView
-                    android:id="@+id/imgCharacter"
-                    android:layout_width="100dp"
+                <RelativeLayout
+                    android:layout_width="140dp"
                     android:layout_height="150dp"
-                    android:layout_gravity="bottom|center_horizontal"
-                    android:src="@drawable/naked_girl" />
+                    android:layout_gravity="bottom|center_horizontal">
+
+                    <ImageView
+                        android:id="@+id/imgCharacter"
+                        android:layout_width="100dp"
+                        android:layout_height="150dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_alignParentEnd="true"
+                        android:layout_marginStart="25dp"
+                        android:layout_marginEnd="25dp"
+                        android:src="@drawable/wet_naked_girl_only" />
+
+                    <pl.droidsonroids.gif.GifImageView
+                        android:id="@+id/drop0"
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:src="@drawable/drop0" />
+
+                    <pl.droidsonroids.gif.GifImageView
+                        android:id="@+id/drop1"
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:layout_below="@+id/drop0"
+                        android:src="@drawable/drop1" />
+
+                    <pl.droidsonroids.gif.GifImageView
+                        android:id="@+id/drop2"
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:layout_alignParentRight="true"
+                        android:src="@drawable/drop2" />
+
+                    <pl.droidsonroids.gif.GifImageView
+                        android:id="@+id/drop3"
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:layout_below="@+id/drop2"
+                        android:layout_alignParentRight="true"
+                        android:src="@drawable/drop3" />
+                </RelativeLayout>
+
+                <!--android:layout_gravity="bottom|center_horizontal"-->
+
 
 
                 <ImageButton

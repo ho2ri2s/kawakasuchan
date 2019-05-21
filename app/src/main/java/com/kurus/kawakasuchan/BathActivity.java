@@ -30,7 +30,8 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
     private Timer timer;
     private Handler handler;
     private TimerTask timerTask;
-    private CountDown countDown;
+    private Date startDate;
+    private Date judgeDate;
     private Realm realm;
     private boolean tookABath;
     private int remainingTime;
@@ -65,20 +66,19 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 txtMinute.setText(String.valueOf(remainingTime));
                 edtMinute.setKeyListener(null);
+                btnEnter.setVisibility(View.GONE);
                 btnBath.setVisibility(View.VISIBLE);
                 btnBath.setOnClickListener(this);
                 break;
             case R.id.btnBath:
-                final Calendar calendar1 = Calendar.getInstance();
-                final Date startDate = calendar1.getTime();
-                Log.d("MYTAG", startDate + "");
                 if (!tookABath) {
                     //// TODO: 2019/05/18 お風呂画像用意
                     imgCharacter.setImageResource(R.drawable.question);
-//                    countDown = new CountDown(Long.parseLong(edtMinute.getText().toString()) * 60 * 1000, 60 * 1000);
-//                    countDown.setOnTickListener(this);
-//                    countDown.setOnFinishListener(this);
-//                    countDown.start();
+                    btnBath.setVisibility(View.GONE);
+                    final Calendar calendar1 = Calendar.getInstance();
+                    startDate = calendar1.getTime();
+                    Log.d("MYTAG", startDate + " startDate");
+
                     timer = new Timer();
                     timerTask = new TimerTask() {
                         @Override
@@ -86,21 +86,26 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    // TODO: 2019/05/19 カウントダウンが終わる処理 
+                                    // TODO: 2019/05/19 カウントダウンが終わる処理
                                     Calendar calendar2 = Calendar.getInstance();
                                     calendar2.add(Calendar.MINUTE, -Integer.parseInt(edtMinute.getText().toString()));
-                                    Date judgeTime = calendar2.getTime();
-                                    Log.d("MYTAG", judgeTime + "");
+                                    judgeDate = calendar2.getTime();
+                                    Log.d("MYTAG", judgeDate + " judgeDate");
 
                                     remainingTime--;
+
                                     Log.d("MYTAG", remainingTime + "");
 
-                                    txtMinute.setText(String.valueOf(remainingTime));
+                                    txtMinute.setText(String.valueOf(remainingTime + 1));
 
-                                    if (judgeTime.after(startDate)) {
+                                    if (judgeDate.after(startDate)) {
                                         tookABath = true;
                                         btnBath.setText("あがる");
+                                        btnBath.setVisibility(View.VISIBLE);
+                                        timer.cancel();
                                     }
+                                    Log.d("MYTAG", tookABath + "");
+
                                 }
                             });
                         }
@@ -128,8 +133,13 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-        if (timer != null && !tookABath) {
-            timer.schedule(timerTask, 0, 60 * 1000);
+        if (timer != null) {
+            if (judgeDate.after(startDate)) {
+                tookABath = true;
+                btnBath.setText("あがる");
+                btnBath.setVisibility(View.VISIBLE);
+                txtMinute.setText("0");
+            }
         }
     }
 
@@ -138,18 +148,11 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
         super.onDestroy();
         if (timer != null) {
             timer.cancel();
+            timer = null;
         }
     }
 
-    //    @Override
-//    public void onFinish() {
-//
-//    }
-//
-//    @Override
-//    public void onTick() {
-//        int remainingMinute;
-//        remainingMinute = Integer.parseInt(edtMinute.getText().toString());
-//        txtMinute.setText(String.valueOf(remainingMinute - 1));
-//    }
 }
+
+
+

@@ -29,7 +29,7 @@ public class Character extends RealmObject {
         this.experienceNow = 0;
         this.level = 1;
         this.wetStatus = 100;
-        this.wetStage = 3;
+        this.wetStage = 4;
         this.isCharacter = true;
     }
 

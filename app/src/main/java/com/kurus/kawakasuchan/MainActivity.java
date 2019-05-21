@@ -15,6 +15,9 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -26,6 +29,7 @@ import android.widget.Toast;
 
 import io.realm.Realm;
 import io.realm.RealmList;
+import pl.droidsonroids.gif.GifImageView;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnDragListener, View.OnClickListener {
 
@@ -51,6 +55,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private boolean onImgCharacter;
     private boolean isDryer;
     private Realm realm;
+    private GifImageView[] drops = new GifImageView[4];
 
 
     private ViewTreeObserver.OnGlobalLayoutListener globalLayoutListener;
@@ -79,6 +84,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         constraintLayout = findViewById(R.id.constraintLayout);
         imgCharacter = findViewById(R.id.imgCharacter);
         txtExperience = findViewById(R.id.txtExperience);
+        for(int i = 0; i < 4; i ++){
+            drops[i] = findViewById(getResources().getIdentifier("drop" + i, "id", getPackageName()));
+        }
 
         imgDryer.setOnTouchListener(this);
         btnDryerBack.setOnClickListener(this);
@@ -118,7 +126,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     public void run() {
                         if (isDryer) {
                             count++;
-                            if (count % 20 == 0) {
+                            if (count % 5 == 0) {
                                 drying();
                                 uiUpdate();
                             }
@@ -265,10 +273,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     public void drying() {
 
-        final Character character = realm
-                .where(Character.class)
-                .equalTo("isCharacter", true)
-                .findFirst();
+        final Character character = realm.where(Character.class).equalTo("isCharacter", true).findFirst();
 
         realm.executeTransaction(new Realm.Transaction() {
             @Override
@@ -278,7 +283,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     character.setWetStatus(character.getWetStatus() - 1);
                     if (character.getWetStatus() % 25 == 0) {
                         //1段階下がるごとに
-                        character.setWetStage(character.getWetStatus() - 1);
+                        character.setWetStage(character.getWetStage() - 1);
+                        //水滴を1つ消し
+                        fadeOutAndHideImage(drops[character.getWetStage()]);
                         //経験値と
                         character.setExperienceNow(character.getExperienceNow() + 25);
                         txtExperience.setAlpha(1.0f);
@@ -320,10 +327,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         txtLevel.setText(String.valueOf(realmCharacter.getLevel()));
         statusBar.setProgress(realmCharacter.getWetStatus());
         experienceBar.setProgress(realmCharacter.getExperienceNow());
-        // TODO: 2019/05/14 服
+        // TODO: 2019/05/14 服 濡れor乾き
         if (realmCharacter.getClothes() != null) {
             imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
         }
+
+        for (int i = 0; i < realmCharacter.getWetStage(); i++){
+            drops[i].setVisibility(View.VISIBLE);
+        }
+
         // インテリアを配置する
         RealmList<Interior> realmInteriors = realmCharacter.getInteriors();
         if (realmInteriors.size() > 0) {
@@ -420,6 +432,24 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
         });
         uiUpdate();
+    }
+
+    private void fadeOutAndHideImage(final ImageView img){
+        Animation fadeOut = new AlphaAnimation(1, 0);
+        fadeOut.setInterpolator(new AccelerateInterpolator());
+        fadeOut.setDuration(2000);
+
+        fadeOut.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                img.setVisibility(View.GONE);
+            }
+            @Override
+            public void onAnimationStart(Animation animation) {            }
+            @Override
+            public void onAnimationRepeat(Animation animation) {            }
+        });
+        img.startAnimation(fadeOut);
     }
 
 }
