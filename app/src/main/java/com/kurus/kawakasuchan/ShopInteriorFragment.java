@@ -220,8 +220,7 @@ public class ShopInteriorFragment extends Fragment implements View.OnClickListen
                     imgInterior[choseNumber].setImageResource(R.drawable.sold_out);
                     //クリックイベント削除
                     imgInterior[choseNumber].setOnClickListener(null);
-                    //追加されたImageView削除
-                    frameLayout.removeView(hashMap.get(realmInterior.getName()));
+
                     Toast.makeText(getContext(), txtChose.getText() + "を購入したよ！", Toast.LENGTH_SHORT).show();
 
                     txtChose.setText("");

@@ -7,6 +7,7 @@ public class Clothes extends RealmObject {
     private String name;
     private int clothesResourceId;
     private int characterResourceId;
+    private int wetCharacterResourceId;
     private int price;
     private boolean isHaving;
 
@@ -15,10 +16,11 @@ public class Clothes extends RealmObject {
     }
 
     // TODO: 2019/05/12 素材を全て準備するのではなく服を重ねる感じにしたい
-    public Clothes(String name, int clothesResourceId, int characterResourceId, int price, boolean isHaving){
+    public Clothes(String name, int clothesResourceId, int characterResourceId, int wetCharacterResourceId, int price, boolean isHaving){
         this.name = name;
         this.clothesResourceId = clothesResourceId;
         this.characterResourceId = characterResourceId;
+        this.wetCharacterResourceId = wetCharacterResourceId;
         this.price = price;
         this.isHaving = isHaving;
     }
@@ -61,5 +63,13 @@ public class Clothes extends RealmObject {
 
     public void setIsHaving(boolean having) {
         isHaving = having;
+    }
+
+    public int getWetCharacterResourceId() {
+        return wetCharacterResourceId;
+    }
+
+    public void setWetCharacterResourceId(int wetCharacterResourceId) {
+        this.wetCharacterResourceId = wetCharacterResourceId;
     }
 }

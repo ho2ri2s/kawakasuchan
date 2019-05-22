@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         constraintLayout = findViewById(R.id.constraintLayout);
         imgCharacter = findViewById(R.id.imgCharacter);
         txtExperience = findViewById(R.id.txtExperience);
-        for(int i = 0; i < 4; i ++){
+        for (int i = 0; i < 4; i++) {
             drops[i] = findViewById(getResources().getIdentifier("drop" + i, "id", getPackageName()));
         }
 
@@ -238,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     //    ドライヤー画像を生成
     public void addDryerImage() {
-        if(onImgCharacter) {
+        if (onImgCharacter) {
 
 
             ((FrameLayout) imgDryer.getParent()).removeView(imgDryer);
@@ -273,30 +273,30 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     public void drying() {
 
-        final Character character = realm.where(Character.class).equalTo("isCharacter", true).findFirst();
+        final Character realmCharacter = realm.where(Character.class).equalTo("isCharacter", true).findFirst();
 
         realm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
                 //髪が濡れている状態なら3秒に1メーター減らし、濡段階が1段階減るごとに経験値とDポイントをゲットする。
-                if (character.getWetStage() > 0) {
-                    character.setWetStatus(character.getWetStatus() - 1);
-                    if (character.getWetStatus() % 25 == 0) {
+                if (realmCharacter.getWetStage() > 0) {
+                    realmCharacter.setWetStatus(realmCharacter.getWetStatus() - 1);
+                    if (realmCharacter.getWetStatus() % 25 == 0) {
                         //1段階下がるごとに
-                        character.setWetStage(character.getWetStage() - 1);
-                        //水滴を1つ消し
-                        fadeOutAndHideImage(drops[character.getWetStage()]);
+                        realmCharacter.setWetStage(realmCharacter.getWetStage() - 1);
+                        //水滴が消え
+                        fadeOutAndHideImage(drops[realmCharacter.getWetStage()]);
                         //経験値と
-                        character.setExperienceNow(character.getExperienceNow() + 25);
+                        realmCharacter.setExperienceNow(realmCharacter.getExperienceNow() + 25);
                         txtExperience.setAlpha(1.0f);
                         txtExperience.animate().alpha(0f).setDuration(3000);
-                        if (character.getExperienceNow() >= 100) {
-                            character.setLevel(character.getLevel() + 1);
-                            character.setExperienceNow(character.getExperienceNow() - 100);
+                        if (realmCharacter.getExperienceNow() >= 100) {
+                            realmCharacter.setLevel(realmCharacter.getLevel() + 1);
+                            realmCharacter.setExperienceNow(realmCharacter.getExperienceNow() - 100);
                             Toast.makeText(MainActivity.this, "LevelUp!!", Toast.LENGTH_LONG).show();
                         }
                         //ポイントが得られる
-                        character.setdPoint(character.getdPoint() + 100);
+                        realmCharacter.setdPoint(realmCharacter.getdPoint() + 100);
                     }
                 }
             }
@@ -306,15 +306,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     public void uiUpdate() {
 
-        final Character character = realm
-                .where(Character.class)
-                .equalTo("isCharacter", true)
-                .findFirst();
+        final Character realmCharacter = realm.where(Character.class).equalTo("isCharacter", true).findFirst();
 
-        txtDPoint.setText(String.valueOf(character.getdPoint()));
-        txtLevel.setText(String.valueOf(character.getLevel()));
-        experienceBar.setProgress(character.getExperienceNow());
-        statusBar.setProgress(character.getWetStatus());
+        txtDPoint.setText(String.valueOf(realmCharacter.getdPoint()));
+        txtLevel.setText(String.valueOf(realmCharacter.getLevel()));
+        experienceBar.setProgress(realmCharacter.getExperienceNow());
+        statusBar.setProgress(realmCharacter.getWetStatus());
+
+        if (realmCharacter.getWetStage() == 0) {
+            if (realmCharacter.getClothes() != null) {
+                imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
+            } else {
+                imgCharacter.setImageResource(R.drawable.naked_girl);
+            }
+        }
 
     }
 
@@ -327,13 +332,32 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         txtLevel.setText(String.valueOf(realmCharacter.getLevel()));
         statusBar.setProgress(realmCharacter.getWetStatus());
         experienceBar.setProgress(realmCharacter.getExperienceNow());
-        // TODO: 2019/05/14 服 濡れor乾き
-        if (realmCharacter.getClothes() != null) {
-            imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
+        //濡れor乾いているキャラクターの画像をセット
+        if (realmCharacter.getClothes() == null) {
+            //服なし&乾いている
+            if (realmCharacter.getWetStage() == 0)
+                imgCharacter.setImageResource(R.drawable.naked_girl);
+        } else {
+            //服あり&乾いている
+            if (realmCharacter.getWetStage() == 0) {
+                imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
+            } else {
+                imgCharacter.setImageResource(realmCharacter.getClothes().getWetCharacterResourceId());
+            }
         }
 
-        for (int i = 0; i < realmCharacter.getWetStage(); i++){
+
+        if (realmCharacter.getClothes() != null) {
+            if (realmCharacter.getWetStage() > 0) {
+                imgCharacter.setImageResource(realmCharacter.getClothes().getWetCharacterResourceId());
+            } else {
+                imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
+            }
+        }
+        //水滴量
+        for (int i = 0; i < realmCharacter.getWetStage(); i++) {
             drops[i].setVisibility(View.VISIBLE);
+
         }
 
         // インテリアを配置する
@@ -419,22 +443,22 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 realm.copyToRealm(character);
                 //服を初期化
                 ItemGroup itemGroup = realm.createObject(ItemGroup.class);
-                itemGroup.getClothes().add(new Clothes("バルーンワンピース", R.drawable.balloon_dress_only, R.drawable.balloon_dress, 1000, false));
-                itemGroup.getClothes().add(new Clothes("シャツワンピース", R.drawable.shirt_dress_only, R.drawable.shirt_dress, 2000, false));
-                itemGroup.getClothes().add(new Clothes("カジュアル服", R.drawable.casual_clothes_only, R.drawable.casual_clothes, 3000, false));
+                itemGroup.getClothes().add(new Clothes("バルーンワンピース", R.drawable.balloon_dress_only, R.drawable.balloon_dress, R.drawable.balloon_dress_wet, 1000, false));
+                itemGroup.getClothes().add(new Clothes("シャツワンピース", R.drawable.shirt_dress_only, R.drawable.shirt_dress, R.drawable.shirt_dress_wet, 2000, false));
+                itemGroup.getClothes().add(new Clothes("カジュアル服", R.drawable.casual_clothes_only, R.drawable.casual_clothes, R.drawable.casual_clothes_wet, 3000, false));
                 //インテリアも初期化
                 itemGroup.getInteriors().add(new Interior("ベッド", R.drawable.bed, 550, 250, 284, 1412, 700, false));
-                itemGroup.getInteriors().add(new Interior("窓", R.drawable.window, 550, 400, 670, 600, 1500, false));
-                itemGroup.getInteriors().add(new Interior("化粧台", R.drawable.mirror, 200, 350, 600, 1050, 3000, false));
-                itemGroup.getInteriors().add(new Interior("本棚", R.drawable.bookshelf, 250, 350, 283, 1049, 5000, false));
-                itemGroup.getInteriors().add(new Interior("テレビ", R.drawable.tv, 400, 300, 1000, 1080, 10000, false));
+                itemGroup.getInteriors().add(new Interior("窓", R.drawable.window, 550, 400, 660, 530, 1500, false));
+                itemGroup.getInteriors().add(new Interior("化粧台", R.drawable.mirror, 200, 350, 280, 1005, 3000, false));
+                itemGroup.getInteriors().add(new Interior("本棚", R.drawable.bookshelf, 280, 400, 636, 970, 5000, false));
+                itemGroup.getInteriors().add(new Interior("テレビ", R.drawable.tv, 364, 273, 1018, 1045, 10000, false));
 
             }
         });
         uiUpdate();
     }
 
-    private void fadeOutAndHideImage(final ImageView img){
+    private void fadeOutAndHideImage(final ImageView img) {
         Animation fadeOut = new AlphaAnimation(1, 0);
         fadeOut.setInterpolator(new AccelerateInterpolator());
         fadeOut.setDuration(2000);
@@ -444,10 +468,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             public void onAnimationEnd(Animation animation) {
                 img.setVisibility(View.GONE);
             }
+
             @Override
-            public void onAnimationStart(Animation animation) {            }
+            public void onAnimationStart(Animation animation) {
+            }
+
             @Override
-            public void onAnimationRepeat(Animation animation) {            }
+            public void onAnimationRepeat(Animation animation) {
+            }
         });
         img.startAnimation(fadeOut);
     }

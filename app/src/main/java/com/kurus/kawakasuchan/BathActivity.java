@@ -14,8 +14,10 @@ import android.widget.Toast;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import io.realm.Realm;
 
@@ -27,14 +29,17 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
     private Button btnBath;
     private ImageView imgCharacter;
 
-    private Timer timer;
+    private ScheduledExecutorService scheduler;
+    private ScheduledFuture future;
     private Handler handler;
-    private TimerTask timerTask;
+    private Runnable task;
     private Date startDate;
-    private Date judgeDate;
+    private Date currentDate;
     private Realm realm;
+
     private boolean tookABath;
-    private int remainingTime;
+    private int setTime;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,6 +48,7 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
 
         tookABath = false;
         handler = new Handler();
+        scheduler = Executors.newSingleThreadScheduledExecutor();
 
         edtMinute = findViewById(R.id.edtMinute);
         txtMinute = findViewById(R.id.txtMinute);
@@ -52,6 +58,8 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
 
         btnEnter.setOnClickListener(this);
         btnBath.setVisibility(View.INVISIBLE);
+
+        realm = Realm.getDefaultInstance();
     }
 
     @Override
@@ -59,12 +67,11 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
         switch (view.getId()) {
             case R.id.btnEnter:
                 try {
-                    remainingTime = Integer.parseInt(edtMinute.getText().toString());
-                    Log.d("MYTAG", remainingTime + "");
+                    setTime = Integer.parseInt(edtMinute.getText().toString());
                 } catch (NumberFormatException e) {
                     Toast.makeText(this, "数字を入力してね！", Toast.LENGTH_SHORT).show();
                 }
-                txtMinute.setText(String.valueOf(remainingTime));
+                txtMinute.setText(String.valueOf(setTime));
                 edtMinute.setKeyListener(null);
                 btnEnter.setVisibility(View.GONE);
                 btnBath.setVisibility(View.VISIBLE);
@@ -72,49 +79,18 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.btnBath:
                 if (!tookABath) {
-                    //// TODO: 2019/05/18 お風呂画像用意
-                    imgCharacter.setImageResource(R.drawable.question);
+                    imgCharacter.setImageResource(R.drawable.ohuro);
                     btnBath.setVisibility(View.GONE);
                     final Calendar calendar1 = Calendar.getInstance();
                     startDate = calendar1.getTime();
                     Log.d("MYTAG", startDate + " startDate");
 
-                    timer = new Timer();
-                    timerTask = new TimerTask() {
-                        @Override
-                        public void run() {
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    // TODO: 2019/05/19 カウントダウンが終わる処理
-                                    Calendar calendar2 = Calendar.getInstance();
-                                    calendar2.add(Calendar.MINUTE, -Integer.parseInt(edtMinute.getText().toString()));
-                                    judgeDate = calendar2.getTime();
-                                    Log.d("MYTAG", judgeDate + " judgeDate");
+                    task = new MyTask();
+                    future = scheduler.scheduleAtFixedRate(task, 0, 60, TimeUnit.SECONDS);
 
-                                    remainingTime--;
-
-                                    Log.d("MYTAG", remainingTime + "");
-
-                                    txtMinute.setText(String.valueOf(remainingTime + 1));
-
-                                    if (judgeDate.after(startDate)) {
-                                        tookABath = true;
-                                        btnBath.setText("あがる");
-                                        btnBath.setVisibility(View.VISIBLE);
-                                        timer.cancel();
-                                    }
-                                    Log.d("MYTAG", tookABath + "");
-
-                                }
-                            });
-                        }
-                    };
-                    timer.schedule(timerTask, 0, 60 * 1000);
                 } else {
                     Intent intent = new Intent(BathActivity.this, MainActivity.class);
                     startActivity(intent);
-                    realm = Realm.getDefaultInstance();
                     final Character realmCharacter = realm.where(Character.class).findFirst();
                     realm.executeTransaction(new Realm.Transaction() {
                         @Override
@@ -123,7 +99,6 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
                             realmCharacter.setWetStage(3);
                         }
                     });
-                    realm.close();
                 }
 
         }
@@ -133,26 +108,86 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
-        if (timer != null) {
-            if (judgeDate.after(startDate)) {
+        if (future != null) {
+            imgCharacter.setImageResource(R.drawable.ohuro);
+
+            Calendar calendar2 = Calendar.getInstance();
+            Date currentDate = calendar2.getTime();
+
+            long elapsedTime = (currentDate.getTime() - startDate.getTime()) / (1000 * 60);
+            Log.d("MYTAG", elapsedTime + "resume");
+            if (elapsedTime >= setTime) {
                 tookABath = true;
+                txtMinute.setText("0");
                 btnBath.setText("あがる");
                 btnBath.setVisibility(View.VISIBLE);
-                txtMinute.setText("0");
+                //繰り返し終了
+                scheduler.shutdown();
+            } else {
+                txtMinute.setText(String.valueOf(elapsedTime));
+                future = scheduler.scheduleAtFixedRate(task, 0, 60, TimeUnit.SECONDS);
             }
+        }
+        showData();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (future != null) {
+            future.cancel(true);
         }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
+        Log.d("MYTAG", "destroy");
+        if(scheduler != null){
+            scheduler.shutdown();
+        }
+        realm.close();
+    }
+
+    private void showData() {
+        Character realmCharacter = realm.where(Character.class).equalTo("isCharacter", true).findFirst();
+        imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
+    }
+
+    class MyTask implements Runnable {
+        @Override
+        public void run() {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    // TODO: 2019/05/19 カウントダウンが終わる処理
+                    Calendar calendar2 = Calendar.getInstance();
+                    currentDate = calendar2.getTime();
+
+                    long elapsedTime = ((currentDate.getTime() - startDate.getTime()) / (1000 * 60));
+
+                    Log.d("MYTAG", currentDate + " currentDate");
+                    Log.d("MYTAG", elapsedTime + " elapseTime");
+
+
+                    txtMinute.setText(String.valueOf(setTime - elapsedTime));
+
+                    if (elapsedTime >= setTime) {
+                        tookABath = true;
+                        btnBath.setText("あがる");
+                        btnBath.setVisibility(View.VISIBLE);
+                        //繰り返し終了
+                        scheduler.shutdown();
+                    }
+                }
+            });
+
         }
     }
 
+
 }
+
 
 
 
