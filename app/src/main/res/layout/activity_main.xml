@@ -149,8 +149,8 @@
             android:layout_height="0dp"
             android:layout_gravity="center"
             android:layout_weight="10"
-            android:orientation="horizontal"
-            android:clipChildren="false">
+            android:clipChildren="false"
+            android:orientation="horizontal">
 
             <FrameLayout
                 android:id="@+id/frameLayout"
@@ -178,33 +178,37 @@
                         android:id="@+id/drop0"
                         android:layout_width="25dp"
                         android:layout_height="25dp"
-                        android:src="@drawable/drop0" />
+                        android:src="@drawable/drop0"
+                        android:visibility="gone" />
+
 
                     <pl.droidsonroids.gif.GifImageView
                         android:id="@+id/drop1"
                         android:layout_width="25dp"
                         android:layout_height="25dp"
-                        android:layout_below="@+id/drop0"
-                        android:src="@drawable/drop1" />
+                        android:layout_alignParentRight="true"
+                        android:src="@drawable/drop1"
+                        android:visibility="gone" />
 
                     <pl.droidsonroids.gif.GifImageView
                         android:id="@+id/drop2"
                         android:layout_width="25dp"
                         android:layout_height="25dp"
-                        android:layout_alignParentRight="true"
-                        android:src="@drawable/drop2" />
+                        android:layout_below="@+id/drop0"
+                        android:src="@drawable/drop2"
+                        android:visibility="gone" />
 
                     <pl.droidsonroids.gif.GifImageView
                         android:id="@+id/drop3"
                         android:layout_width="25dp"
                         android:layout_height="25dp"
-                        android:layout_below="@+id/drop2"
+                        android:layout_below="@+id/drop1"
                         android:layout_alignParentRight="true"
-                        android:src="@drawable/drop3" />
+                        android:src="@drawable/drop3"
+                        android:visibility="gone" />
                 </RelativeLayout>
 
                 <!--android:layout_gravity="bottom|center_horizontal"-->
-
 
 
                 <ImageButton
@@ -212,16 +216,17 @@
                     android:layout_width="70dp"
                     android:layout_height="70dp"
                     android:layout_gravity="right|top"
-                    android:background="@drawable/text_border"/>
+                    android:background="@drawable/text_border" />
 
 
                 <ImageView
                     android:id="@+id/imgDryer"
                     android:layout_width="70dp"
                     android:layout_height="70dp"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
                     android:layout_gravity="right|top"
-                    app:srcCompat="@drawable/dryer"
-                    />
+                    app:srcCompat="@drawable/dryer" />
 
 
             </FrameLayout>
@@ -289,8 +294,8 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="5dp"
                 android:layout_weight="1"
-                android:text="お風呂"
                 android:backgroundTint="@color/colorPrimary"
+                android:text="お風呂"
                 android:textColor="@android:color/white" />
 
             <Button
@@ -299,8 +304,8 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="5dp"
                 android:layout_weight="1"
-                android:text="着せ替え"
                 android:backgroundTint="@color/colorPrimary"
+                android:text="着せ替え"
                 android:textColor="@android:color/white" />
         </LinearLayout>
     </LinearLayout>

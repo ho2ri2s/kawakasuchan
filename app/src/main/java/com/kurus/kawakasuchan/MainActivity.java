@@ -29,6 +29,7 @@ import android.widget.Toast;
 
 import io.realm.Realm;
 import io.realm.RealmList;
+import pl.droidsonroids.gif.GifDrawable;
 import pl.droidsonroids.gif.GifImageView;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener, View.OnDragListener, View.OnClickListener {
@@ -38,7 +39,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private static final float LIVING__HEIGHT = 1920.0f;
 
     private TextView txtDPoint, txtLevel, txtExperience;
-    private ImageView imgDryer, imgCharacter;
+    private ImageView imgCharacter;
+    private ImageView imgDryer;
     private ImageButton btnDryerBack;
     private Button btnShopping, btnBath, btnCustomize;
     private ProgressBar experienceBar, statusBar;
@@ -56,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private boolean isDryer;
     private Realm realm;
     private GifImageView[] drops = new GifImageView[4];
+    private GifDrawable[] dropDrawables = new GifDrawable[4];
 
 
     private ViewTreeObserver.OnGlobalLayoutListener globalLayoutListener;
@@ -86,6 +89,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         txtExperience = findViewById(R.id.txtExperience);
         for (int i = 0; i < 4; i++) {
             drops[i] = findViewById(getResources().getIdentifier("drop" + i, "id", getPackageName()));
+            dropDrawables[i] = (GifDrawable) drops[i].getDrawable();
         }
 
         imgDryer.setOnTouchListener(this);
@@ -114,30 +118,36 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         //端末に保存されているキャラクター情報を読み込む
         showData();
 
-        count = 0;
-        //ドライヤーの準備ができているときに録音処理を開始する
-        soundDetection = new SoundDetection();
-        soundDetection.setOnReachedVolumeListener(new SoundDetection.OnReachedVolumeListener() {
-            //音を感知したら呼び出される
-            public void onReachedVolume(short volume) {
-                //soundDetectionのスレッドからUIスレッドに描画更新処理を投げる
-                runnable = new Runnable() {
-                    @Override
-                    public void run() {
-                        if (isDryer) {
-                            count++;
-                            if (count % 5 == 0) {
-                                drying();
-                                uiUpdate();
+        //録音OKなら音感センサー起動
+        if (Build.VERSION.SDK_INT >= 23 && checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED) {
+
+            soundDetection = new SoundDetection();
+            soundDetection.setOnReachedVolumeListener(new SoundDetection.OnReachedVolumeListener() {
+                //音を感知したら呼び出される
+                public void onReachedVolume(short volume) {
+                    //soundDetectionのスレッドからUIスレッドに描画更新処理を投げる
+                    runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            if (isDryer) {
+                                for (int i = 0; i < dropDrawables.length; i++) {
+                                    dropDrawables[i].start();
+                                }
+                                count++;
+                                if (count % 5 == 0) {
+                                    drying();
+                                    uiUpdate();
+                                }
                             }
                         }
-                    }
-                };
-                handler.post(runnable);
-            }
-        });
-        //別のスレッドとして録音開始
-        new Thread(soundDetection).start();
+                    };
+                    handler.post(runnable);
+                }
+            });
+            //別のスレッドとして録音開始
+            new Thread(soundDetection).start();
+        }
     }
 
     //他のアクティビティに移ったときに呼ばれるメソッド
@@ -145,7 +155,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onPause() {
         super.onPause();
         //録音停止
-        soundDetection.stop();
+        if(soundDetection != null){
+            soundDetection.stop();
+        }
         //handlerとrunnableとの関係を切る
         handler.removeCallbacks(runnable);
         //キャラクター情報を端末に保存する
@@ -185,7 +197,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 view.startDrag(null, new View.DragShadowBuilder(view), (Object) view, 0);
-                Log.d("MYTAG", "ACTION_DOWN");
                 isDryer = true;
                 break;
         }
@@ -230,7 +241,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 break;
             case R.id.btnDryerBack:
                 resetDryer();
-                Log.d("MYTAG", "ONCLICK");
                 break;
         }
     }
@@ -248,6 +258,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             imgDryer.setImageResource(R.drawable.dryer);
 
             frameLayout.addView(imgDryer, layoutParams);
+
             imgDryer.setTranslationX(dryerX - 100); //imgDryer.getHeight() / 2 は,ずれちゃう
             imgDryer.setTranslationY(dryerY - 100); //imgDryer.getHeight() / 2 は,ずれちゃう
             imgDryer.setOnTouchListener(this);
@@ -265,14 +276,19 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         layoutParams.gravity = Gravity.RIGHT;
         imgDryer = new ImageView(getApplicationContext());
         imgDryer.setImageResource(R.drawable.dryer);
-
         frameLayout.addView(imgDryer, layoutParams);
-        imgDryer.setOnTouchListener(this);
+
+
+        this.imgDryer.setOnTouchListener(this);
+
+        Character realmCharacter = realm.where(Character.class).findFirst();
+        for (int i = 0; i < realmCharacter.getWetStage(); i++) {
+            dropDrawables[i].stop();
+        }
 
     }
 
     public void drying() {
-
         final Character realmCharacter = realm.where(Character.class).equalTo("isCharacter", true).findFirst();
 
         realm.executeTransaction(new Realm.Transaction() {
@@ -282,6 +298,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 if (realmCharacter.getWetStage() > 0) {
                     realmCharacter.setWetStatus(realmCharacter.getWetStatus() - 1);
                     if (realmCharacter.getWetStatus() % 25 == 0) {
+                        Log.d("MYTAG", realmCharacter.getWetStatus() + "status  " + realmCharacter.getWetStage() + " stage");
                         //1段階下がるごとに
                         realmCharacter.setWetStage(realmCharacter.getWetStage() - 1);
                         //水滴が消え
@@ -332,6 +349,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         txtLevel.setText(String.valueOf(realmCharacter.getLevel()));
         statusBar.setProgress(realmCharacter.getWetStatus());
         experienceBar.setProgress(realmCharacter.getExperienceNow());
+
         //濡れor乾いているキャラクターの画像をセット
         if (realmCharacter.getClothes() == null) {
             //服なし&乾いている
@@ -346,19 +364,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
         }
 
-
-        if (realmCharacter.getClothes() != null) {
-            if (realmCharacter.getWetStage() > 0) {
-                imgCharacter.setImageResource(realmCharacter.getClothes().getWetCharacterResourceId());
-            } else {
-                imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
-            }
-        }
-        //水滴量
+        //水滴を可視化
         for (int i = 0; i < realmCharacter.getWetStage(); i++) {
             drops[i].setVisibility(View.VISIBLE);
-
+            dropDrawables[i].stop();
         }
+        Log.d("MYTAG", realmCharacter.getWetStage() + "drop数");
 
         // インテリアを配置する
         RealmList<Interior> realmInteriors = realmCharacter.getInteriors();
@@ -425,9 +436,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             public void execute(Realm realm) {
                 character.setdPoint(Integer.parseInt(txtDPoint.getText().toString()));
                 character.setLevel(Integer.parseInt(txtLevel.getText().toString()));
-                character.setWetStatus(statusBar.getProgress());
                 character.setExperienceNow(experienceBar.getProgress());
-                character.setWetStage(statusBar.getProgress() / 25);
             }
         });
     }
@@ -479,6 +488,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         });
         img.startAnimation(fadeOut);
     }
+
 
 }
 

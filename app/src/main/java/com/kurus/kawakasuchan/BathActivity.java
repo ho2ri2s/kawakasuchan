@@ -74,6 +74,7 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
                 txtMinute.setText(String.valueOf(setTime));
                 edtMinute.setKeyListener(null);
                 btnEnter.setVisibility(View.GONE);
+                edtMinute.setVisibility(View.GONE);
                 btnBath.setVisibility(View.VISIBLE);
                 btnBath.setOnClickListener(this);
                 break;
@@ -96,7 +97,7 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
                         @Override
                         public void execute(Realm realm) {
                             realmCharacter.setWetStatus(100);
-                            realmCharacter.setWetStage(3);
+                            realmCharacter.setWetStage(4);
                         }
                     });
                 }
@@ -151,7 +152,9 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
 
     private void showData() {
         Character realmCharacter = realm.where(Character.class).equalTo("isCharacter", true).findFirst();
-        imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
+        if(realmCharacter.getClothes() != null){
+            imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
+        }
     }
 
     class MyTask implements Runnable {
