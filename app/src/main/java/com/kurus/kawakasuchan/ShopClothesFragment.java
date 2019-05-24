@@ -119,7 +119,7 @@ public class ShopClothesFragment extends Fragment implements View.OnClickListene
 
         txtDPoint.setText(String.valueOf(realmCharacter.getdPoint()));
         txtLevel.setText(String.valueOf(realmCharacter.getLevel()));
-        // TODO: 2019/05/12 nullを作らないためnakedにも値を充てる
+
         if(realmCharacter.getClothes() != null){
             imgCharacter.setImageResource(realmCharacter.getClothes().getCharacterResourceId());
         }

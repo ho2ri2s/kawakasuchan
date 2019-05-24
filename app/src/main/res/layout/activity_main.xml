@@ -47,7 +47,7 @@
                     android:layout_height="0dp"
                     android:layout_gravity="center"
                     android:layout_weight="1"
-                    android:text="Dポイント" />
+                    android:text="ポイント" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -69,7 +69,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:gravity="center"
-                        android:text="pt" />
+                        android:text="DP" />
                 </LinearLayout>
 
             </LinearLayout>
@@ -159,6 +159,13 @@
                 android:layout_weight="2">
 
 
+                <pl.droidsonroids.gif.GifImageView
+                    android:id="@+id/wind"
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:src="@drawable/wind"
+                    android:visibility="invisible"/>
+
                 <RelativeLayout
                     android:layout_width="140dp"
                     android:layout_height="150dp"
@@ -216,6 +223,7 @@
                     android:layout_width="70dp"
                     android:layout_height="70dp"
                     android:layout_gravity="right|top"
+                    android:gravity="center"
                     android:background="@drawable/text_border" />
 
 
@@ -247,6 +255,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="乾"
+                android:textColor="@android:color/white"
                 android:textSize="18sp" />
 
             <ProgressBar
@@ -267,6 +276,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:text="濡"
+                android:textColor="@android:color/white"
                 android:textSize="18sp" />
         </LinearLayout>
 

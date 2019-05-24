@@ -15,7 +15,6 @@ public class Clothes extends RealmObject {
 
     }
 
-    // TODO: 2019/05/12 素材を全て準備するのではなく服を重ねる感じにしたい
     public Clothes(String name, int clothesResourceId, int characterResourceId, int wetCharacterResourceId, int price, boolean isHaving){
         this.name = name;
         this.clothesResourceId = clothesResourceId;

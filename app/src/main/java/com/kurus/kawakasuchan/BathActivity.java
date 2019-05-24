@@ -163,7 +163,6 @@ public class BathActivity extends AppCompatActivity implements View.OnClickListe
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    // TODO: 2019/05/19 カウントダウンが終わる処理
                     Calendar calendar2 = Calendar.getInstance();
                     currentDate = calendar2.getTime();
 

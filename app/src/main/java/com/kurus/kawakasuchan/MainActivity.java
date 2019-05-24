@@ -39,9 +39,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private static final float LIVING__HEIGHT = 1920.0f;
 
     private TextView txtDPoint, txtLevel, txtExperience;
+    private ImageButton btnDryerBack;
     private ImageView imgCharacter;
     private ImageView imgDryer;
-    private ImageButton btnDryerBack;
     private Button btnShopping, btnBath, btnCustomize;
     private ProgressBar experienceBar, statusBar;
     private SoundDetection soundDetection;
@@ -57,7 +57,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private boolean onImgCharacter;
     private boolean isDryer;
     private Realm realm;
-    private GifImageView[] drops = new GifImageView[4];
+    private GifImageView[] gifDrops = new GifImageView[4];
+    private GifImageView gifWind;
     private GifDrawable[] dropDrawables = new GifDrawable[4];
 
 
@@ -87,9 +88,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         constraintLayout = findViewById(R.id.constraintLayout);
         imgCharacter = findViewById(R.id.imgCharacter);
         txtExperience = findViewById(R.id.txtExperience);
+        gifWind = findViewById(R.id.wind);
         for (int i = 0; i < 4; i++) {
-            drops[i] = findViewById(getResources().getIdentifier("drop" + i, "id", getPackageName()));
-            dropDrawables[i] = (GifDrawable) drops[i].getDrawable();
+            gifDrops[i] = findViewById(getResources().getIdentifier("drop" + i, "id", getPackageName()));
+            dropDrawables[i] = (GifDrawable) gifDrops[i].getDrawable();
         }
 
         imgDryer.setOnTouchListener(this);
@@ -135,7 +137,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                                     dropDrawables[i].start();
                                 }
                                 count++;
-                                if (count % 5 == 0) {
+                                if (count % 15 == 0) {
                                     drying();
                                     uiUpdate();
                                 }
@@ -198,6 +200,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             case MotionEvent.ACTION_DOWN:
                 view.startDrag(null, new View.DragShadowBuilder(view), (Object) view, 0);
                 isDryer = true;
+                btnDryerBack.setImageResource(R.drawable.ic_close_blackdp);
                 break;
         }
         return false;   //他のリスナイベントを発生させる(false)
@@ -251,16 +254,24 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         if (onImgCharacter) {
 
 
-            ((FrameLayout) imgDryer.getParent()).removeView(imgDryer);
-
             FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(imgDryer.getWidth(), imgDryer.getHeight());
+            ((FrameLayout) imgDryer.getParent()).removeView(imgDryer);
             imgDryer = new ImageView(getApplicationContext());
             imgDryer.setImageResource(R.drawable.dryer);
-
             frameLayout.addView(imgDryer, layoutParams);
+            imgDryer.setTranslationX(dryerX - 100); //imgDryer.getHeight() / 2 は,ずれちゃう 検討課題
+            imgDryer.setTranslationY(dryerY - 100); //imgDryer.getHeight() / 2 は,ずれちゃう 検討課題
 
-            imgDryer.setTranslationX(dryerX - 100); //imgDryer.getHeight() / 2 は,ずれちゃう
-            imgDryer.setTranslationY(dryerY - 100); //imgDryer.getHeight() / 2 は,ずれちゃう
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(gifWind.getWidth(), gifWind.getHeight());
+            Log.d("MYTAG", gifWind.getWidth() + " wi, he " + gifWind.getHeight());
+            ((FrameLayout) gifWind.getParent()).removeView(gifWind);
+            gifWind = new GifImageView(this);
+            gifWind.setImageResource(R.drawable.wind);
+            frameLayout.addView(gifWind, params);
+            gifWind.setTranslationX(imgDryer.getX() - 100);
+            gifWind.setTranslationY(imgDryer.getY() + 25);
+
+
             imgDryer.setOnTouchListener(this);
         }
 
@@ -270,7 +281,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     //初期化
     public void resetDryer() {
         isDryer = false;
+
         ((FrameLayout) imgDryer.getParent()).removeView(imgDryer);
+        gifWind.setVisibility(View.INVISIBLE);
 
         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(imgDryer.getWidth(), imgDryer.getHeight());
         layoutParams.gravity = Gravity.RIGHT;
@@ -278,13 +291,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         imgDryer.setImageResource(R.drawable.dryer);
         frameLayout.addView(imgDryer, layoutParams);
 
-
         this.imgDryer.setOnTouchListener(this);
 
         Character realmCharacter = realm.where(Character.class).findFirst();
         for (int i = 0; i < realmCharacter.getWetStage(); i++) {
             dropDrawables[i].stop();
         }
+
+        btnDryerBack.setImageDrawable(null);
 
     }
 
@@ -302,7 +316,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         //1段階下がるごとに
                         realmCharacter.setWetStage(realmCharacter.getWetStage() - 1);
                         //水滴が消え
-                        fadeOutAndHideImage(drops[realmCharacter.getWetStage()]);
+                        fadeOutAndHideImage(gifDrops[realmCharacter.getWetStage()]);
                         //経験値と
                         realmCharacter.setExperienceNow(realmCharacter.getExperienceNow() + 25);
                         txtExperience.setAlpha(1.0f);
@@ -366,7 +380,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         //水滴を可視化
         for (int i = 0; i < realmCharacter.getWetStage(); i++) {
-            drops[i].setVisibility(View.VISIBLE);
+            gifDrops[i].setVisibility(View.VISIBLE);
             dropDrawables[i].stop();
         }
         Log.d("MYTAG", realmCharacter.getWetStage() + "drop数");

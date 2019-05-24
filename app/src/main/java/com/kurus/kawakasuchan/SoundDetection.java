@@ -14,7 +14,7 @@ public class SoundDetection implements Runnable {
     //サンプリングレート 44.1kHz
     private static final int SAMPLE_RATE = 44100;
     //ボーダー音量
-    private short borderVolume = 8000;
+    private short borderVolume = 7500;
 
 
     public void setBorderVolume(short borderVolume){
